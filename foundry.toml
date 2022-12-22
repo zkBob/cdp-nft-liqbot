@@ -1,0 +1,12 @@
+[profile.default]
+src = 'src'
+out = 'out'
+libs = ['lib']
+remappings = ["@solmate/=lib/solmate/", "@cdp/=lib/stable-nft/"]
+optimizer = true
+
+[profile.default.optimizer_details]
+yul = true
+
+[profile.default.optimizer_details.yulDetails]
+stackAllocation = true
