@@ -1,0 +1,6 @@
+[submodule "lib/stable-nft"]
+	path = lib/stable-nft
+	url = https://github.com/zkBob/stable-nft.git
+[submodule "lib/forge-std"]
+	path = lib/forge-std
+	url = https://github.com/foundry-rs/forge-std
