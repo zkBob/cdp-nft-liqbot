@@ -45,6 +45,10 @@ contract Bot is IERC3156FlashBorrower {
         FlashCallbackData memory flashData,
         address recepient
     ) public isAuthorized returns (uint256 earnings) {
+        uint256 debt = flashData.cdp.getOverallDebt(flashData.vaultId);
+        if (flashData.debt < debt) {
+            flashData.debt = debt;
+        }
         // liquidation itself
         bytes memory data = abi.encode(flashData);
         lender.flashLoan(this, address(token), flashData.debt, data);
