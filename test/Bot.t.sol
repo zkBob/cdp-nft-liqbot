@@ -9,6 +9,7 @@ import "@cdp/src/interfaces/IMUSD.sol";
 import "@cdp/src/proxy/EIP1967Proxy.sol";
 import "./BotConfig.sol";
 import "./Utilities.sol";
+import "./FlashMinter.sol";
 import "../src/Bot.sol";
 import "../src/helpers/UniV3Helper.sol";
 import "./interfaces/IMintableBurnableERC20.sol";
@@ -18,9 +19,9 @@ contract BotPolygonTest is Test, Utilities {
     MockOracle oracle;
     ProtocolGovernance protocolGovernance;
     address treasury;
-    address[] pools;
     Bot bot;
     UniV3Helper helper;
+    FlashMinter minter;
 
     function setupCDP() public {
         oracle = new MockOracle();
@@ -47,15 +48,16 @@ contract BotPolygonTest is Test, Utilities {
         address[] memory depositors = new address[](1);
         depositors[0] = address(this);
         cdp.addDepositorsToAllowlist(depositors);
-        vm.prank(bobAdmin);
+        minter = new FlashMinter(bob, type(uint96).max, getNextUserAddress(), 10 ** 14, type(uint96).max);
+        vm.startPrank(Ownable(bob).owner());
+        IMintableBurnableERC20(bob).updateMinter(address(minter), true, true);
         IMintableBurnableERC20(bob).updateMinter(address(cdp), true, true);
+        vm.stopPrank();
     }
 
     function setUp() public {
         setupCDP();
-        pools = new address[](1);
-        pools[0] = IUniswapV3Factory(UniV3Factory).getPool(bob, usdc, 100);
-        bot = new Bot(pools);
+        bot = new Bot(address(this), address(minter));
         helper = new UniV3Helper();
     }
 
@@ -66,7 +68,7 @@ contract BotPolygonTest is Test, Utilities {
         uint256 vaultId = cdp.mintDebtFromScratch(nfts[0], 700 * (10 ** 18));
         oracle.setPrice(wmatic, uint256(1 << 96) / 10);
         uint256 balanceBefore = IERC20(bob).balanceOf(address(this));
-        liquidate(vaultId, nfts, helper, cdp, bot, pools[0]);
+        liquidate(vaultId, nfts, helper, cdp, bot, address(minter));
         uint256 balanceAfter = IERC20(bob).balanceOf(address(this));
         assertGt(balanceAfter, balanceBefore + 500 * (10 ** 18));
         assertEq(IERC20(usdc).balanceOf(address(bot)), 0);

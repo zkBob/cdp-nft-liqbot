@@ -96,7 +96,7 @@ contract Utilities is Test, BotConfig {
 
         deal(token0, address(this), amount0 * 100);
         deal(token1, address(this), amount1 * 100);
-        vm.deal(address(this), 1 ether);
+        // vm.deal(address(this), 1 ether);
 
         (, int24 currentTick, , , , , ) = pool.slot0();
         currentTick -= currentTick % 60;
@@ -150,7 +150,7 @@ contract Utilities is Test, BotConfig {
         UniV3Helper helper,
         Vault cdp,
         Bot bot,
-        address pool
+        address flashMinter
     ) public {
         // TODO: Add calculation
         uint256 debt = 1533280164485283615600;
@@ -171,9 +171,8 @@ contract Utilities is Test, BotConfig {
             swapAddresses: swapAddresses,
             swapData: swapData,
             positionManager: INonfungiblePositionManager(UniV3PositionManager),
-            cdp: ICDP(address(cdp)),
-            token: cdp.token()
+            cdp: ICDP(address(cdp))
         });
-        bot.liquidate(IUniswapV3Pool(pool), flashData, address(this), false);
+        bot.liquidate(IERC3156FlashLender(flashMinter), IERC20(bob), flashData, address(this));
     }
 }
