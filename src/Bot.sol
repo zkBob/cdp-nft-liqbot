@@ -37,13 +37,13 @@ contract Bot is IERC3156FlashBorrower {
     /// @notice liquidating CDP position without frontrun liquidity
     /// @param lender the address of flashloan minter
     /// @param flashData the data passed to flashloan callback
-    /// @param recepient the address of beneficiar
+    /// @param recipient the address of beneficiar
     /// @return earnings amount of tokens earned via liquidation
     function liquidate(
         IERC3156FlashLender lender,
         IERC20 token,
         FlashCallbackData memory flashData,
-        address recepient
+        address recipient
     ) public isAuthorized returns (uint256 earnings) {
         uint256 debt = flashData.cdp.getOverallDebt(flashData.vaultId);
         if (flashData.debt < debt) {
@@ -55,7 +55,7 @@ contract Bot is IERC3156FlashBorrower {
 
         // return earnings
         earnings = token.balanceOf(address(this));
-        token.transfer(recepient, earnings);
+        token.transfer(recipient, earnings);
     }
 
     /// @inheritdoc IERC3156FlashBorrower
