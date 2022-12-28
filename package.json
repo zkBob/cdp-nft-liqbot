@@ -1,0 +1,17 @@
+{
+  "name": "cdp_bot",
+  "version": "1.0.0",
+  "license": "MIT",
+  "scripts": {
+    "prettier": "prettier --write **.sol",
+    "prettier:check": "prettier --check **.sol",
+    "test": "forge test -vv --fork-url $(grep MAINNET_RPC .env | cut -d '=' -f2) --fork-block-number 37062347",
+    "test:better": "forge test -vvvv --fork-url $(grep MAINNET_RPC .env | cut -d '=' -f2) --fork-block-number 37062347 --etherscan-api-key $(grep ETHERSCAN_API_KEY .env | cut -d '=' -f2)",
+    "size": "forge build --sizes --force --via-ir",
+    "compile": "forge build"
+  },
+  "dependencies": {
+    "prettier": "^2.8.1",
+    "prettier-plugin-solidity": "^1.1.0"
+  }
+}
