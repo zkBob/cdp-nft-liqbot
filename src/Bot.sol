@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 import "@cdp/src/interfaces/external/univ3/INonfungiblePositionManager.sol";
 import "@cdp/lib/openzeppelin-contracts/contracts/interfaces/IERC3156FlashLender.sol";
-import "./interfaces/ICDP.sol";
+import "@cdp/src/interfaces/ICDP.sol";
 import "./interfaces/IWETH.sol";
 
 contract Bot is IERC3156FlashBorrower {
@@ -111,11 +111,11 @@ contract Bot is IERC3156FlashBorrower {
     /// @param nft the position nft
     /// @param positionManager the address of uniV3 position manager
     function closeUniV3Position(uint256 nft, INonfungiblePositionManager positionManager) internal {
-        (, , , , , , , uint128 liquidity, , , , ) = positionManager.positions(nft);
+        INonfungiblePositionManager.PositionInfo memory info = positionManager.positions(nft);
         positionManager.decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
                 tokenId: nft,
-                liquidity: liquidity,
+                liquidity: info.liquidity,
                 amount0Min: 0,
                 amount1Min: 0,
                 deadline: type(uint256).max

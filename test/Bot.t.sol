@@ -3,7 +3,7 @@ pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 import "@cdp/src/Vault.sol";
-import "@cdp/src/ProtocolGovernance.sol";
+import "@cdp/src/oracles/UniV3Oracle.sol";
 import "@cdp/test/mocks/MockOracle.sol";
 import "@cdp/src/interfaces/IMUSD.sol";
 import "@cdp/src/proxy/EIP1967Proxy.sol";
@@ -17,7 +17,6 @@ import "./interfaces/IMintableBurnableERC20.sol";
 contract BotPolygonTest is Test, Utilities {
     Vault cdp;
     MockOracle oracle;
-    ProtocolGovernance protocolGovernance;
     address treasury;
     Bot bot;
     UniV3Helper helper;
@@ -27,27 +26,30 @@ contract BotPolygonTest is Test, Utilities {
         oracle = new MockOracle();
         oracle.setPrice(wmatic, (uint256(1 << 96) * 78) / 100);
         oracle.setPrice(usdc, uint256(1 << 96) * (10 ** 12));
-        protocolGovernance = new ProtocolGovernance(address(this), type(uint256).max);
-        protocolGovernance.changeMaxNftsPerVault(5);
         IERC20(usdc).approve(UniV3PositionManager, type(uint256).max);
         IERC20(wmatic).approve(UniV3PositionManager, type(uint256).max);
         address tokenPool = IUniswapV3Factory(UniV3Factory).getPool(wmatic, usdc, 100);
-        protocolGovernance.setWhitelistedPool(tokenPool);
-        protocolGovernance.setLiquidationThreshold(tokenPool, 6e8); // 0.6 * DENOMINATOR == 60%
         treasury = getNextUserAddress();
         cdp = new Vault(
             INonfungiblePositionManager(UniV3PositionManager),
-            IUniswapV3Factory(UniV3Factory),
-            IProtocolGovernance(protocolGovernance),
+            INFTOracle(new UniV3Oracle(INonfungiblePositionManager(UniV3PositionManager), IOracle(address(oracle)))),
             treasury,
             bob
         );
-        bytes memory initData = abi.encodeWithSelector(Vault.initialize.selector, address(this), oracle, 10 ** 7);
+        bytes memory initData = abi.encodeWithSelector(
+            Vault.initialize.selector,
+            address(this),
+            10 ** 7,
+            (10 ** 6) * (10 ** 18)
+        );
         cdp = Vault(address(new EIP1967Proxy(address(this), address(cdp), initData)));
         IERC20(bob).approve(address(cdp), type(uint256).max);
         address[] memory depositors = new address[](1);
         depositors[0] = address(this);
         cdp.addDepositorsToAllowlist(depositors);
+        cdp.changeMaxNftsPerVault(5);
+        cdp.setWhitelistedPool(tokenPool);
+        cdp.setLiquidationThreshold(tokenPool, 6e8); // 0.6 * DENOMINATOR == 60%
         minter = new FlashMinter(bob, type(uint96).max, getNextUserAddress(), 10 ** 14, type(uint96).max);
         vm.startPrank(Ownable(bob).owner());
         IMintableBurnableERC20(bob).updateMinter(address(minter), true, true);
