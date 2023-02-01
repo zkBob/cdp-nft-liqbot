@@ -2,7 +2,7 @@
 src = 'src'
 out = 'out'
 libs = ['lib']
-remappings = ["@solmate/=lib/solmate/", "@cdp/=lib/stable-nft/"]
+remappings = ["@solmate/=lib/solmate/", "@cdp/=lib/stable-nft/", "@v3-periphery/=lib/stable-nft/src/interfaces/external/univ3/", "@cdp-lib/=lib/stable-nft/src/libraries/external/"]
 optimizer = true
 
 [profile.default.optimizer_details]
