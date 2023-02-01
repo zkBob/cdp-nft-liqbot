@@ -3,6 +3,7 @@ pragma solidity 0.8.13;
 
 import "forge-std/Test.sol";
 import "@cdp/src/Vault.sol";
+import "@cdp/src/VaultRegistry.sol";
 import "@cdp/src/oracles/UniV3Oracle.sol";
 import "@cdp/test/mocks/MockOracle.sol";
 import "@cdp/src/interfaces/IMUSD.sol";
@@ -12,6 +13,7 @@ import "./Utilities.sol";
 import "./FlashMinter.sol";
 import "../src/Bot.sol";
 import "../src/helpers/UniV3Helper.sol";
+import "../src/helpers/PathExecutorHelper.sol";
 import "./interfaces/IMintableBurnableERC20.sol";
 
 contract BotPolygonTest is Test, Utilities {
@@ -19,7 +21,8 @@ contract BotPolygonTest is Test, Utilities {
     MockOracle oracle;
     address treasury;
     Bot bot;
-    UniV3Helper helper;
+    UniV3Helper uniHelper;
+    PathExecutorHelper pathHelper;
     FlashMinter minter;
 
     function setupCDP() public {
@@ -50,6 +53,7 @@ contract BotPolygonTest is Test, Utilities {
         cdp.changeMaxNftsPerVault(5);
         cdp.setWhitelistedPool(tokenPool);
         cdp.setLiquidationThreshold(tokenPool, 6e8); // 0.6 * DENOMINATOR == 60%
+        cdp.setVaultRegistry(IVaultRegistry(address(new VaultRegistry(cdp, "name", "symbol", ""))));
         minter = new FlashMinter(bob, type(uint96).max, getNextUserAddress(), 10 ** 14, type(uint96).max);
         vm.startPrank(Ownable(bob).owner());
         IMintableBurnableERC20(bob).updateMinter(address(minter), true, true);
@@ -60,7 +64,14 @@ contract BotPolygonTest is Test, Utilities {
     function setUp() public {
         setupCDP();
         bot = new Bot(address(this), address(minter));
-        helper = new UniV3Helper();
+        uniHelper = new UniV3Helper();
+        pathHelper = new PathExecutorHelper();
+        bot.approve(IERC20(wmatic), address(pathHelper), type(uint256).max);
+        bot.approve(IERC20(usdc), address(pathHelper), type(uint256).max);
+        pathHelper.approveAll(IERC20(wmatic), address(uniHelper));
+        pathHelper.approveAll(IERC20(usdc), address(uniHelper));
+        uniHelper.approveAll(IERC20(usdc), OneInchAggregator);
+        uniHelper.approveAll(IERC20(wmatic), OneInchAggregator);
     }
 
     function testSimple() public {
@@ -70,7 +81,7 @@ contract BotPolygonTest is Test, Utilities {
         uint256 vaultId = cdp.mintDebtFromScratch(nfts[0], 700 * (10 ** 18));
         oracle.setPrice(wmatic, uint256(1 << 96) / 10);
         uint256 balanceBefore = IERC20(bob).balanceOf(address(this));
-        liquidate(vaultId, nfts, helper, cdp, bot, address(minter));
+        liquidate(vaultId, nfts, uniHelper, pathHelper, cdp, bot, address(minter));
         uint256 balanceAfter = IERC20(bob).balanceOf(address(this));
         assertGt(balanceAfter, balanceBefore + 500 * (10 ** 18));
         assertEq(IERC20(usdc).balanceOf(address(bot)), 0);

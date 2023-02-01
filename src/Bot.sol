@@ -91,6 +91,14 @@ contract Bot is IERC3156FlashBorrower {
         IWETH(weth).deposit{value: address(this).balance}();
     }
 
+    /// @notice gives allowance to spend tokens
+    /// @param token the token address to spend
+    /// @param to the address to give allowance
+    /// @param amount the allowed amount to spend
+    function approve(IERC20 token, address to, uint256 amount) external isAuthorized {
+        token.approve(to, amount);
+    }
+
     /// @notice executes external calls (it is expected to be swaps to bob)
     /// if one of the calls reverts, the whole function reverts
     /// @param addresses the addresses of other contracts, needed to execute methods
