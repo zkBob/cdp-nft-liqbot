@@ -1,16 +1,15 @@
 // SPDX-License-Identifer: MIT
-pragma solidity 0.8.13;
+pragma solidity ^0.8.0;
 
 import "forge-std/Test.sol";
-import "@cdp/src/Vault.sol";
+import {Vault} from "@cdp/src/Vault.sol";
 import "@cdp/src/VaultRegistry.sol";
 import "@cdp/src/oracles/UniV3Oracle.sol";
 import "@cdp/test/mocks/MockOracle.sol";
-import "@cdp/src/interfaces/IMUSD.sol";
-import "@cdp/src/proxy/EIP1967Proxy.sol";
+import "@cdp/lib/@zkbob/src/proxy/EIP1967Proxy.sol";
 import "./BotConfig.sol";
 import "./Utilities.sol";
-import "./FlashMinter.sol";
+import {FlashMinter} from "./FlashMinter.sol";
 import "../src/Bot.sol";
 import "../src/helpers/UniV3Helper.sol";
 import "../src/helpers/PathExecutorHelper.sol";
@@ -33,11 +32,14 @@ contract BotPolygonTest is Test, Utilities {
         IERC20(wmatic).approve(UniV3PositionManager, type(uint256).max);
         address tokenPool = IUniswapV3Factory(UniV3Factory).getPool(wmatic, usdc, 100);
         treasury = getNextUserAddress();
+        VaultRegistry registry = new VaultRegistry("name", "symbol", "");
+        registry = VaultRegistry(address(new EIP1967Proxy(address(this), address(registry), "")));
         cdp = new Vault(
             INonfungiblePositionManager(UniV3PositionManager),
-            INFTOracle(new UniV3Oracle(INonfungiblePositionManager(UniV3PositionManager), IOracle(address(oracle)))),
+            INFTOracle(new UniV3Oracle(UniV3PositionManager, IOracle(address(oracle)), 100000000000000000)),
             treasury,
-            bob
+            bob,
+            address(registry)
         );
         bytes memory initData = abi.encodeWithSelector(
             Vault.initialize.selector,
@@ -46,6 +48,7 @@ contract BotPolygonTest is Test, Utilities {
             (10 ** 6) * (10 ** 18)
         );
         cdp = Vault(address(new EIP1967Proxy(address(this), address(cdp), initData)));
+        registry.setMinter(address(cdp), true);
         IERC20(bob).approve(address(cdp), type(uint256).max);
         address[] memory depositors = new address[](1);
         depositors[0] = address(this);
@@ -53,7 +56,6 @@ contract BotPolygonTest is Test, Utilities {
         cdp.changeMaxNftsPerVault(5);
         cdp.setWhitelistedPool(tokenPool);
         cdp.setLiquidationThreshold(tokenPool, 6e8); // 0.6 * DENOMINATOR == 60%
-        cdp.setVaultRegistry(IVaultRegistry(address(new VaultRegistry(cdp, "name", "symbol", ""))));
         minter = new FlashMinter(bob, type(uint96).max, getNextUserAddress(), 10 ** 14, type(uint96).max);
         vm.startPrank(Ownable(bob).owner());
         IMintableBurnableERC20(bob).updateMinter(address(minter), true, true);
@@ -72,6 +74,7 @@ contract BotPolygonTest is Test, Utilities {
         pathHelper.approveAll(IERC20(usdc), address(uniHelper));
         uniHelper.approveAll(IERC20(usdc), OneInchAggregator);
         uniHelper.approveAll(IERC20(wmatic), OneInchAggregator);
+        vm.warp(block.timestamp + 24 * 60 * 60);
     }
 
     function testSimple() public {

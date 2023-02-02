@@ -1,15 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.0;
 
 import "forge-std/Vm.sol";
 import "forge-std/Test.sol";
-import "@cdp/src/Vault.sol";
-import "@cdp/lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol";
-import "@cdp/src/interfaces/external/univ3/IUniswapV3Pool.sol";
-import "@cdp/src/interfaces/external/univ3/ISwapRouter.sol";
-import "@cdp/src/interfaces/external/univ3/IUniswapV3Factory.sol";
-import "@cdp/src/interfaces/external/univ3/INonfungiblePositionManager.sol";
-import "@cdp/src/interfaces/external/univ3/IUniswapV3Pool.sol";
+import {Vault} from "@cdp/src/Vault.sol";
+import "@univ3-core/interfaces/IUniswapV3Pool.sol";
+import "@univ3-core/interfaces/IUniswapV3Factory.sol";
+import "@univ3-periphery/interfaces/ISwapRouter.sol";
+import "@univ3-periphery/interfaces/INonfungiblePositionManager.sol";
 import "./BotConfig.sol";
 import "../src/Bot.sol";
 import "../src/helpers/UniV3Helper.sol";
