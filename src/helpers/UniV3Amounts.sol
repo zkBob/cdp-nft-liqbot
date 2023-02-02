@@ -1,20 +1,21 @@
 // SPDX-License-Identifer
 pragma solidity ^0.8.0;
 
-import "../interfaces/external/univ3/INonfungiblePositionManager.sol";
-import "../interfaces/external/univ3/IUniswapV3Pool.sol";
-import "../interfaces/external/univ3/IUniswapV3Factory.sol";
-import "../libraries/external/LiquidityAmounts.sol";
-import "../libraries/external/TickMath.sol";
-import "../libraries/UniswapV3FeesCalculation.sol";
+import {INonfungiblePositionLoader} from "@cdp/src/interfaces/external/univ3/INonfungiblePositionLoader.sol";
+import {INonfungiblePositionManager} from "@univ3-periphery/interfaces/INonfungiblePositionManager.sol";
+import "@univ3-core/interfaces/IUniswapV3Pool.sol";
+import "@univ3-core/interfaces/IUniswapV3Factory.sol";
+import "@univ3-periphery/libraries/LiquidityAmounts.sol";
+import "@univ3-core/libraries/TickMath.sol";
+import "@cdp/src/libraries/UniswapV3FeesCalculation.sol";
 
 contract UniV3Amounts {
     function getAmounts(
         uint256 nft,
-        INonfungiblePositionManager positionManager
+        INonfungiblePositionLoader positionLoader
     ) external view returns (address[2] memory tokens, uint256[2] memory tokenAmounts) {
-        IUniswapV3Factory factory = IUniswapV3Factory(positionManager.factory());
-        INonfungiblePositionManager.PositionInfo memory info = positionManager.positions(nft);
+        IUniswapV3Factory factory = IUniswapV3Factory(INonfungiblePositionManager(address(positionLoader)).factory());
+        INonfungiblePositionLoader.PositionInfo memory info = positionLoader.positions(nft);
         IUniswapV3Pool pool = IUniswapV3Pool(factory.getPool(info.token0, info.token1, info.fee));
 
         (uint160 sqrtRatioX96, int24 tick, , , , , ) = pool.slot0();
