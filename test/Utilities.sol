@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0;
+pragma solidity ^0.8.0;
 
 import "forge-std/Vm.sol";
 import "forge-std/Test.sol";
-import "@cdp/src/Vault.sol";
-import "@cdp/lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol";
-import "@cdp/src/interfaces/external/univ3/IUniswapV3Pool.sol";
-import "@cdp/src/interfaces/external/univ3/ISwapRouter.sol";
-import "@cdp/src/interfaces/external/univ3/IUniswapV3Factory.sol";
-import "@cdp/src/interfaces/external/univ3/INonfungiblePositionManager.sol";
-import "@cdp/src/interfaces/external/univ3/IUniswapV3Pool.sol";
+import {Vault} from "@cdp/src/Vault.sol";
+import "@univ3-core/interfaces/IUniswapV3Pool.sol";
+import "@univ3-core/interfaces/IUniswapV3Factory.sol";
+import "@univ3-periphery/interfaces/ISwapRouter.sol";
+import "@univ3-periphery/interfaces/INonfungiblePositionManager.sol";
 import "./BotConfig.sol";
 import "../src/Bot.sol";
 import "../src/helpers/UniV3Helper.sol";
+import "../src/helpers/PathExecutorHelper.sol";
 
 //common utilities for forge tests
 contract Utilities is Test, BotConfig {
@@ -121,6 +120,7 @@ contract Utilities is Test, BotConfig {
 
     function buildSwapData(
         address bot,
+        address uniHelper,
         address tokenFrom,
         address tokenTo,
         uint24 fee
@@ -132,38 +132,34 @@ contract Utilities is Test, BotConfig {
         if (!flag) {
             pools[0] += (1 << 255);
         }
-        return
-            abi.encodeWithSelector(
-                UniV3Helper.uniswapV3SwapTo.selector,
-                tokenFrom,
-                OneInchAggregator,
-                100,
-                bot,
-                0,
-                pools
-            );
+        PathExecutorHelper.SwapData[] memory swapData = new PathExecutorHelper.SwapData[](1);
+        swapData[0] = PathExecutorHelper.SwapData({
+            part: 100,
+            tokenFrom: IERC20(tokenFrom),
+            helper: ISwapHelper(uniHelper),
+            data: abi.encode(pools, OneInchAggregator)
+        });
+        return abi.encodeWithSelector(PathExecutorHelper.swap.selector, tokenFrom, swapData, tokenTo);
     }
 
     function liquidate(
         uint256 vaultId,
         uint256[] memory nfts,
-        UniV3Helper helper,
+        UniV3Helper uniHelper,
+        PathExecutorHelper pathHelper,
         Vault cdp,
         Bot bot,
         address flashMinter
     ) public {
         // TODO: Add calculation
         uint256 debt = 1533280164485283615600;
-        address[] memory swapAddresses = new address[](4);
-        swapAddresses[0] = address(usdc);
-        swapAddresses[1] = address(wmatic);
-        swapAddresses[2] = address(helper);
-        swapAddresses[3] = address(helper);
-        bytes[] memory swapData = new bytes[](4);
-        swapData[0] = abi.encodeWithSelector(IERC20.approve.selector, address(helper), type(uint256).max);
-        swapData[1] = abi.encodeWithSelector(IERC20.approve.selector, address(helper), type(uint256).max);
-        swapData[2] = buildSwapData(address(bot), usdc, wmatic, 500);
-        swapData[3] = buildSwapData(address(bot), wmatic, bob, 500);
+        address[] memory swapAddresses = new address[](2);
+        swapAddresses[0] = address(pathHelper);
+        swapAddresses[1] = address(pathHelper);
+
+        bytes[] memory swapData = new bytes[](2);
+        swapData[0] = buildSwapData(address(bot), address(uniHelper), usdc, wmatic, 500);
+        swapData[1] = buildSwapData(address(bot), address(uniHelper), wmatic, bob, 500);
         Bot.FlashCallbackData memory flashData = Bot.FlashCallbackData({
             vaultId: vaultId,
             debt: debt,

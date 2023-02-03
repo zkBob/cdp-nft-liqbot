@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity ^0.8.0;
 
 abstract contract BotConfig {
     address constant UniV3PositionManager = address(0xC36442b4a4522E871399CD717aBDD847Ab11FE88);

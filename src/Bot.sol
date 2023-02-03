@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.13;
+pragma solidity ^0.8.0;
 
-import "@cdp/src/interfaces/external/univ3/INonfungiblePositionManager.sol";
-import "@cdp/lib/openzeppelin-contracts/contracts/interfaces/IERC3156FlashLender.sol";
-import "@cdp/src/interfaces/ICDP.sol";
+import {INonfungiblePositionLoader} from "@cdp/src/interfaces/external/univ3/INonfungiblePositionLoader.sol";
+import {INonfungiblePositionManager} from "@univ3-periphery/interfaces/INonfungiblePositionManager.sol";
+import {IERC3156FlashLender, IERC3156FlashBorrower} from "@cdp/lib/openzeppelin-contracts/contracts/interfaces/IERC3156FlashLender.sol";
+import {ICDP} from "@cdp/src/interfaces/ICDP.sol";
 import "./interfaces/IWETH.sol";
 
 contract Bot is IERC3156FlashBorrower {
@@ -91,6 +92,14 @@ contract Bot is IERC3156FlashBorrower {
         IWETH(weth).deposit{value: address(this).balance}();
     }
 
+    /// @notice gives allowance to spend tokens
+    /// @param token the token address to spend
+    /// @param to the address to give allowance
+    /// @param amount the allowed amount to spend
+    function approve(IERC20 token, address to, uint256 amount) external isAuthorized {
+        token.approve(to, amount);
+    }
+
     /// @notice executes external calls (it is expected to be swaps to bob)
     /// if one of the calls reverts, the whole function reverts
     /// @param addresses the addresses of other contracts, needed to execute methods
@@ -111,7 +120,8 @@ contract Bot is IERC3156FlashBorrower {
     /// @param nft the position nft
     /// @param positionManager the address of uniV3 position manager
     function closeUniV3Position(uint256 nft, INonfungiblePositionManager positionManager) internal {
-        INonfungiblePositionManager.PositionInfo memory info = positionManager.positions(nft);
+        INonfungiblePositionLoader.PositionInfo memory info = INonfungiblePositionLoader(address(positionManager))
+            .positions(nft);
         positionManager.decreaseLiquidity(
             INonfungiblePositionManager.DecreaseLiquidityParams({
                 tokenId: nft,
