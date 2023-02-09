@@ -36,3 +36,5 @@ jobs:
           forge --version
           forge build --sizes
         id: build
+        with:
+          submodules: recursive
