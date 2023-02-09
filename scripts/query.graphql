@@ -1,0 +1,20 @@
+query Vaults {
+  vaults {
+    id
+    vaultDebt
+    stabilisationFeeVaultSnapshot
+    globalStabilisationFeePerUSDVaultSnapshotD
+    uniV3Positions {
+      liquidity
+      tickLower
+      tickUpper
+      token0
+      token1
+      amount0
+      amount1
+      liquidationThreshold {
+        liquidationThreshold
+      }
+    }
+  }
+}
