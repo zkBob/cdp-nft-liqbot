@@ -32,8 +32,6 @@ jobs:
         run: yarn prettier:check-scripts
 
       - name: Run Forge build
-        with:
-          submodules: recursive
         run: |
           forge --version
           forge build --sizes
