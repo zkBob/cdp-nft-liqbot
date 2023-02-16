@@ -1,5 +1,5 @@
 query Vaults {
-  vaults {
+  vaults (where: { vaultDebt_gt: "0" }) {
     id
     vaultDebt
     stabilisationFeeVaultSnapshot

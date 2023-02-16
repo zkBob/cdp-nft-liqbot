@@ -1400,7 +1400,7 @@ export type VaultsQuery = { vaults: Array<(
 
 export const VaultsDocument = gql`
     query Vaults {
-  vaults {
+  vaults(where: {vaultDebt_gt: "0"}) {
     id
     vaultDebt
     stabilisationFeeVaultSnapshot

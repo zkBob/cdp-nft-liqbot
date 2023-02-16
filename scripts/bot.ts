@@ -1,6 +1,8 @@
-import { BigNumber, BigNumberish, ethers } from "ethers";
+import { BigNumber, ethers } from "ethers";
+import { NonceManager } from "@ethersproject/experimental";
 import { Vault } from "../.graphclient";
 import { readFileSync } from "fs";
+import { DENOMINATOR } from "./constants";
 import axios from "axios";
 import url from "url";
 import { AbiCoder, Interface } from "ethers/lib/utils";
@@ -12,6 +14,7 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
         provider
     );
     const signer = new ethers.Wallet(process.env.PRIVATE_KEY as string, provider);
+    const nonceManager = new NonceManager(signer);
 
     const { overallCollateral, adjustedCollateral } = await cdp.calculateVaultCollateral(vault.id);
     const actualDebt = await cdp.getOverallDebt(vault.id);
@@ -19,7 +22,6 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
         return;
     }
     const { liquidationPremiumD } = await cdp.protocolParams();
-    const DENOMINATOR = BigNumber.from(10).pow(9);
     const toRepay = overallCollateral.mul(DENOMINATOR.sub(liquidationPremiumD)).div(DENOMINATOR);
     console.log(
         "Trying to liquidate vault %s with repayment %s and debt %s",
@@ -28,13 +30,10 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
         actualDebt.toString()
     );
     const nfts = await cdp.vaultNftsById(vault.id);
-    const { swapAddresses, swapData } = await buildAllSwapData(
-        bot.address,
-        await cdp.positionManager(),
-        nfts,
-        provider
-    );
-    const tx = await bot.connect(signer).liquidate(
+    const positionManager = await cdp.positionManager();
+    const { swapAddresses, swapData } = await buildAllSwapData(bot.address, positionManager, nfts, provider);
+    let { maxFeePerGas } = await provider.getFeeData();
+    const expectedGas = await bot.connect(signer).estimateGas.liquidate(
         process.env.FLASH_MINTER,
         process.env.TOKEN,
         {
@@ -47,6 +46,27 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
             cdp: cdp.address,
         },
         signer.address
+    );
+    if (maxFeePerGas == null) {
+        maxFeePerGas = BigNumber.from(process.env.MAX_FEE_PER_GAS);
+    }
+    const tx = await bot.connect(nonceManager).liquidate(
+        process.env.FLASH_MINTER,
+        process.env.TOKEN,
+        {
+            vaultId: vault.id,
+            debt: toRepay,
+            nfts,
+            swapAddresses,
+            swapData,
+            positionManager: process.env.POSITION_MANAGER,
+            cdp: cdp.address,
+        },
+        signer.address,
+        {
+            // gasLimit: expectedGas.mul(101).div(100),
+            maxFeePerGas: maxFeePerGas.mul(101).div(100),
+        }
     );
     await tx.wait();
 };
