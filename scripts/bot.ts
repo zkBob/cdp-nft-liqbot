@@ -64,11 +64,10 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
         },
         signer.address,
         {
-            // gasLimit: expectedGas.mul(101).div(100),
+            gasLimit: expectedGas.mul(101).div(100),
             maxFeePerGas: maxFeePerGas.mul(101).div(100),
         }
     );
-    await tx.wait();
 };
 
 const buildAllSwapData = async (
