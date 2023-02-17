@@ -18,15 +18,34 @@ const main = async () => {
         readFileSync("./scripts/abis/Vault.json", "utf-8"),
         provider
     );
-    const vaults: Vault[] = (await execute(VaultsDocument, {})).data.vaults;
-    const tokenPricesX96 = await getNeededPricesX96(vaults, provider, cdp);
-    const globalStabilisationFeePerUSDD = await cdp.globalStabilisationFeePerUSDD();
-    for (let i = 0; i < vaults.length; ++i) {
-        const vault = vaults[i];
-        if (await liquidationNeeded(vault, tokenPricesX96, globalStabilisationFeePerUSDD)) {
-            await liquidate(vault, cdp, provider);
+    const interval = parseInt(process.env.INTERVAL as string);
+    while (true) {
+        const start = performance.now();
+        try {
+            const vaults: Vault[] = (await execute(VaultsDocument, {})).data.vaults;
+            const tokenPricesX96 = await getNeededPricesX96(vaults, provider, cdp);
+            const globalStabilisationFeePerUSDD = await cdp.globalStabilisationFeePerUSDD();
+            for (let i = 0; i < vaults.length; ++i) {
+                const vault = vaults[i];
+                if (await liquidationNeeded(vault, tokenPricesX96, globalStabilisationFeePerUSDD)) {
+                    await liquidate(vault, cdp, provider);
+                }
+            }
+        } catch (error) {
+            // TODO: report error
+            console.log("Error: ", error);
         }
+        const finish = performance.now();
+        let duration = finish - start;
+        if (duration > interval) {
+            duration = interval;
+        }
+        await sleep(interval - duration);
     }
+};
+
+const sleep = (ms: number) => {
+    return new Promise((resolve) => setTimeout(resolve, ms));
 };
 
 const getChainlinkOracle = async (provider: ethers.providers.Provider, cdp: ethers.Contract) => {

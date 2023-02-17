@@ -30,8 +30,7 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
         actualDebt.toString()
     );
     const nfts = await cdp.vaultNftsById(vault.id);
-    const positionManager = await cdp.positionManager();
-    const { swapAddresses, swapData } = await buildAllSwapData(bot.address, positionManager, nfts, provider);
+    const { swapAddresses, swapData } = await buildAllSwapData(bot.address, nfts, provider);
     let { maxFeePerGas } = await provider.getFeeData();
     const expectedGas = await bot.connect(signer).estimateGas.liquidate(
         process.env.FLASH_MINTER,
@@ -50,7 +49,7 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
     if (maxFeePerGas == null) {
         maxFeePerGas = BigNumber.from(process.env.MAX_FEE_PER_GAS);
     }
-    const tx = await bot.connect(nonceManager).liquidate(
+    await bot.connect(nonceManager).liquidate(
         process.env.FLASH_MINTER,
         process.env.TOKEN,
         {
@@ -70,13 +69,8 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
     );
 };
 
-const buildAllSwapData = async (
-    bot: string,
-    positionManager: string,
-    nfts: BigNumber[],
-    provider: ethers.providers.Provider
-) => {
-    const result: { [key: string]: BigNumber } = await getActualTokenAmounts(positionManager, nfts, provider);
+const buildAllSwapData = async (bot: string, nfts: BigNumber[], provider: ethers.providers.Provider) => {
+    const result: { [key: string]: BigNumber } = await getActualTokenAmounts(nfts, provider);
     let swapData: string[] = [];
     let swapAddresses: string[] = [];
     for (let token in result) {
@@ -90,11 +84,7 @@ const buildAllSwapData = async (
     return { swapAddresses, swapData };
 };
 
-const getActualTokenAmounts = async (
-    positionManager: string,
-    nfts: BigNumber[],
-    provider: ethers.providers.Provider
-) => {
+const getActualTokenAmounts = async (nfts: BigNumber[], provider: ethers.providers.Provider) => {
     const uniV3Amounts = new ethers.Contract(
         process.env.UNI_V3_AMOUNTS as string,
         readFileSync("./scripts/abis/UniV3Amounts.json", "utf-8"),
@@ -104,7 +94,7 @@ const getActualTokenAmounts = async (
     for (let i = 0; i < nfts.length; ++i) {
         var tokens: string[];
         var amounts: BigNumber[];
-        [tokens, amounts] = await uniV3Amounts.getAmounts(nfts[i], positionManager);
+        [tokens, amounts] = await uniV3Amounts.getAmounts(nfts[i], process.env.POSITION_MANAGER);
         for (let j = 0; j < 2; ++j) {
             if (!(tokens[j] in result)) {
                 result[tokens[j]] = BigNumber.from(0);
