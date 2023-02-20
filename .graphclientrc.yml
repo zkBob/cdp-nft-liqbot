@@ -1,0 +1,13 @@
+# .graphclientrc.yml
+sources:
+  - name: cdp
+    handler:
+      graphql:
+        endpoint: https://api.thegraph.com/subgraphs/name/yusupovai/cdp
+    transforms:
+      - autoPagination:
+          validateSchema: true
+          limitOfRecords: 100
+
+documents:
+  - ./scripts/query.graphql

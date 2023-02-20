@@ -3,15 +3,28 @@
   "version": "1.0.0",
   "license": "MIT",
   "scripts": {
-    "prettier": "prettier --write **.sol",
-    "prettier:check": "prettier --check **.sol",
-    "test": "forge test -vv --fork-url $(grep MAINNET_RPC .env | cut -d '=' -f2) --fork-block-number 37062347",
-    "test:better": "forge test -vvvv --fork-url $(grep MAINNET_RPC .env | cut -d '=' -f2) --fork-block-number 37062347 --etherscan-api-key $(grep ETHERSCAN_API_KEY .env | cut -d '=' -f2)",
+    "prettier": "prettier --write **.sol && prettier --write ./scripts/*.ts",
+    "prettier:check-solidity": "prettier --check **.sol",
+    "prettier:check-scripts": "prettier --check ./scripts/*.ts",
+    "test": "forge test -vv --fork-url $(grep POLYGON_RPC .env | cut -d '=' -f2) --fork-block-number 37062347",
+    "test:better": "forge test -vvvv --fork-url $(grep POLYGON_RPC .env | cut -d '=' -f2) --fork-block-number 37062347 --etherscan-api-key $(grep ETHERSCAN_API_KEY .env | cut -d '=' -f2)",
     "size": "forge build --sizes --force --via-ir",
-    "compile": "forge build"
+    "compile": "forge build",
+    "deploy:goerli": "forge script src/script/Deployment.s.sol:Deployment --rpc-url $(grep GOERLI_RPC .env | cut -d '=' -f2) --private-key $(grep PRIVATE_KEY .env | cut -d '=' -f2) -vvv",
+    "build-graph": "graphclient build",
+    "run-bot": "node --loader ts-node/esm scripts/index.ts"
   },
   "dependencies": {
+    "@ethersproject/experimental": "^5.7.0",
+    "@graphprotocol/client-cli": "^2.2.16",
+    "@uniswap/v3-periphery": "^1.4.3",
+    "@uniswap/v3-sdk": "^3.9.0",
+    "axios": "^1.2.2",
+    "dotenv": "^16.0.3",
+    "ethers": "^5.7.2",
+    "graphql": "^16.6.0",
     "prettier": "^2.8.1",
-    "prettier-plugin-solidity": "^1.1.0"
+    "prettier-plugin-solidity": "^1.1.0",
+    "ts-node": "^10.9.1"
   }
 }
