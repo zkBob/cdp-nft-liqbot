@@ -10,7 +10,9 @@ import { AbiCoder, Interface } from "ethers/lib/utils";
 export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: ethers.providers.Provider) => {
     const bot = new ethers.Contract(
         process.env.BOT as string,
-        readFileSync("./scripts/abis/Bot.json", "utf-8"),
+        [
+            "function liquidate(address flashMinter, address token, tuple(uint256 vaultId, uint256 debt, uint256[] nfts, address[] swapAddresses, bytes[] swapData, address positionManager, address cdp), address recipient)",
+        ],
         provider
     );
     const signer = new ethers.Wallet(process.env.PRIVATE_KEY as string, provider);
@@ -87,7 +89,9 @@ const buildAllSwapData = async (bot: string, nfts: BigNumber[], provider: ethers
 const getActualTokenAmounts = async (nfts: BigNumber[], provider: ethers.providers.Provider) => {
     const uniV3Amounts = new ethers.Contract(
         process.env.UNI_V3_AMOUNTS as string,
-        readFileSync("./scripts/abis/UniV3Amounts.json", "utf-8"),
+        [
+            "function getAmounts(uint256 nft, address positionManager) view returns (tuple(address[2] tokens, uint256[2] tokenAmounts))",
+        ],
         provider
     );
     let result: { [key: string]: BigNumber } = {};
@@ -114,12 +118,12 @@ const buildSwapData = async (
     // TODO: query calldata from 1inch
     const factory = new ethers.Contract(
         process.env.FACTORY as string,
-        readFileSync("./scripts/abis/UniV3Factory.json", "utf-8"),
+        ["function getPool(address token0, address token1, uint24 fee) view returns (address)"],
         provider
     );
     const pool = new ethers.Contract(
         await factory.getPool(tokenFrom, process.env.TOKEN, 3000),
-        readFileSync("./scripts/abis/UniV3Pool.json", "utf-8"),
+        ["function token0() view returns (address)"],
         provider
     );
     let poolID = BigNumber.from(pool.address);
@@ -129,9 +133,9 @@ const buildSwapData = async (
     }
     const coder = new ethers.utils.AbiCoder();
     const uniV3Data = coder.encode(["uint256[]", "address"], [[poolID], process.env.ROUTER]);
-    const pathHelperInterface = new ethers.utils.Interface(
-        readFileSync("./scripts/abis/PathExecutorHelper.json", "utf-8")
-    );
+    const pathHelperInterface = new ethers.utils.Interface([
+        "function swap(address srcToken, tuple(uint16 part, address tokenFrom, address helper, bytes data)[] data, address destToken)",
+    ]);
     return {
         address: process.env.PATH_HELPER as string,
         data: pathHelperInterface.encodeFunctionData("swap", [

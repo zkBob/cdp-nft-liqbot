@@ -15,7 +15,14 @@ const main = async () => {
     const provider = new JsonRpcProvider(process.env.RPC);
     let cdp = new ethers.Contract(
         process.env.CDP as string,
-        readFileSync("./scripts/abis/Vault.json", "utf-8"),
+        [
+            "function globalStabilisationFeePerUSDD() view returns (uint256)",
+            "function oracle() view returns (address)",
+            "function calculateVaultCollateral(uint256 vaultId) view returns (tuple(uint256 overallCollateral, uint256 adjustedCollateral))",
+            "function getOverallDebt(uint256 vaultId) view returns (uint256)",
+            "function protocolParams() view returns (tuple(uint256 maxDebtPerVault, uint256 minSingleNftCollateral, uint32 liquidationFeeD, uint32 liquidationPremiumD, uint8 maxNftsPerVault))",
+            "function vaultNftsById(uint256 vaultId) view returns (uint256[])",
+        ],
         provider
     );
     const interval = parseInt(process.env.INTERVAL as string);
@@ -51,12 +58,12 @@ const sleep = (ms: number) => {
 const getChainlinkOracle = async (provider: ethers.providers.Provider, cdp: ethers.Contract) => {
     const positionOracle = new ethers.Contract(
         await cdp.oracle(),
-        readFileSync("./scripts/abis/UniV3Oracle.json", "utf-8"),
+        ["function oracle() view returns(address)"],
         provider
     );
     return new ethers.Contract(
         await positionOracle.oracle(),
-        readFileSync("./scripts/abis/ChainlinkOracle.json", "utf-8"),
+        ["function price(address token) view returns (tuple(bool success, uint256 priceX96))"],
         provider
     );
 };
