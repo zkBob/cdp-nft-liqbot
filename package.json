@@ -10,9 +10,11 @@
     "test:better": "forge test -vvvv --fork-url $(grep POLYGON_RPC .env | cut -d '=' -f2) --fork-block-number 37062347 --etherscan-api-key $(grep ETHERSCAN_API_KEY .env | cut -d '=' -f2)",
     "size": "forge build --sizes --force --via-ir",
     "compile": "forge build",
-    "deploy:goerli": "forge script src/script/Deployment.s.sol:Deployment --rpc-url $(grep GOERLI_RPC .env | cut -d '=' -f2) --private-key $(grep PRIVATE_KEY .env | cut -d '=' -f2) -vvv",
+    "deploy:goerli": "forge script contracts/src/script/Deployment.s.sol:Deployment --rpc-url $(grep GOERLI_RPC .env | cut -d '=' -f2) --private-key $(grep PRIVATE_KEY .env | cut -d '=' -f2) -vvv",
     "build-graph": "graphclient build",
-    "run-bot": "node --loader ts-node/esm scripts/index.ts"
+    "run-bot": "node --loader ts-node/esm scripts/index.ts",
+    "run-test-bot": "node --loader ts-node/esm scripts/index.ts",
+    "test-deploy": "forge script contracts/src/test-deployment/EnvSetup.s.sol:EnvSetup --rpc-url $(grep POLYGON_RPC .env | cut -d '=' -f2) --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80 -vvvv"
   },
   "dependencies": {
     "@ethersproject/experimental": "^5.7.0",

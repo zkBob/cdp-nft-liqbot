@@ -118,6 +118,8 @@ export type DebtBurnedEntity_filter = {
 export type DebtBurnedEntity_orderBy =
   | 'id'
   | 'vault'
+  | 'vault__id'
+  | 'vault__vaultNormalizedDebt'
   | 'debtDecrease';
 
 export type DebtMintedEntity = {
@@ -185,6 +187,8 @@ export type DebtMintedEntity_filter = {
 export type DebtMintedEntity_orderBy =
   | 'id'
   | 'vault'
+  | 'vault__id'
+  | 'vault__vaultNormalizedDebt'
   | 'debtIncrease';
 
 export type Deposit = {
@@ -252,14 +256,23 @@ export type Deposit_filter = {
 export type Deposit_orderBy =
   | 'id'
   | 'vault'
+  | 'vault__id'
+  | 'vault__vaultNormalizedDebt'
   | 'uniV3Position';
 
-export type LiquidationThreshold = {
+/** Defines the order direction, either ascending or descending */
+export type OrderDirection =
+  | 'asc'
+  | 'desc';
+
+export type PoolInfo = {
   id: Scalars['String'];
   liquidationThreshold: Scalars['BigInt'];
+  borrowThreshold: Scalars['BigInt'];
+  minWidth: Scalars['Int'];
 };
 
-export type LiquidationThreshold_filter = {
+export type PoolInfo_filter = {
   id?: InputMaybe<Scalars['String']>;
   id_not?: InputMaybe<Scalars['String']>;
   id_gt?: InputMaybe<Scalars['String']>;
@@ -288,20 +301,33 @@ export type LiquidationThreshold_filter = {
   liquidationThreshold_lte?: InputMaybe<Scalars['BigInt']>;
   liquidationThreshold_in?: InputMaybe<Array<Scalars['BigInt']>>;
   liquidationThreshold_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
+  borrowThreshold?: InputMaybe<Scalars['BigInt']>;
+  borrowThreshold_not?: InputMaybe<Scalars['BigInt']>;
+  borrowThreshold_gt?: InputMaybe<Scalars['BigInt']>;
+  borrowThreshold_lt?: InputMaybe<Scalars['BigInt']>;
+  borrowThreshold_gte?: InputMaybe<Scalars['BigInt']>;
+  borrowThreshold_lte?: InputMaybe<Scalars['BigInt']>;
+  borrowThreshold_in?: InputMaybe<Array<Scalars['BigInt']>>;
+  borrowThreshold_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
+  minWidth?: InputMaybe<Scalars['Int']>;
+  minWidth_not?: InputMaybe<Scalars['Int']>;
+  minWidth_gt?: InputMaybe<Scalars['Int']>;
+  minWidth_lt?: InputMaybe<Scalars['Int']>;
+  minWidth_gte?: InputMaybe<Scalars['Int']>;
+  minWidth_lte?: InputMaybe<Scalars['Int']>;
+  minWidth_in?: InputMaybe<Array<Scalars['Int']>>;
+  minWidth_not_in?: InputMaybe<Array<Scalars['Int']>>;
   /** Filter for the block changed event. */
   _change_block?: InputMaybe<BlockChangedFilter>;
-  and?: InputMaybe<Array<InputMaybe<LiquidationThreshold_filter>>>;
-  or?: InputMaybe<Array<InputMaybe<LiquidationThreshold_filter>>>;
+  and?: InputMaybe<Array<InputMaybe<PoolInfo_filter>>>;
+  or?: InputMaybe<Array<InputMaybe<PoolInfo_filter>>>;
 };
 
-export type LiquidationThreshold_orderBy =
+export type PoolInfo_orderBy =
   | 'id'
-  | 'liquidationThreshold';
-
-/** Defines the order direction, either ascending or descending */
-export type OrderDirection =
-  | 'asc'
-  | 'desc';
+  | 'liquidationThreshold'
+  | 'borrowThreshold'
+  | 'minWidth';
 
 export type Query = {
   vault?: Maybe<Vault>;
@@ -314,8 +340,8 @@ export type Query = {
   deposits: Array<Deposit>;
   withdrawal?: Maybe<Withdrawal>;
   withdrawals: Array<Withdrawal>;
-  liquidationThreshold?: Maybe<LiquidationThreshold>;
-  liquidationThresholds: Array<LiquidationThreshold>;
+  poolInfo?: Maybe<PoolInfo>;
+  poolInfos: Array<PoolInfo>;
   uniV3Position?: Maybe<UniV3Position>;
   uniV3Positions: Array<UniV3Position>;
   /** Access to subgraph metadata */
@@ -413,19 +439,19 @@ export type QuerywithdrawalsArgs = {
 };
 
 
-export type QueryliquidationThresholdArgs = {
+export type QuerypoolInfoArgs = {
   id: Scalars['ID'];
   block?: InputMaybe<Block_height>;
   subgraphError?: _SubgraphErrorPolicy_;
 };
 
 
-export type QueryliquidationThresholdsArgs = {
+export type QuerypoolInfosArgs = {
   skip?: InputMaybe<Scalars['Int']>;
   first?: InputMaybe<Scalars['Int']>;
-  orderBy?: InputMaybe<LiquidationThreshold_orderBy>;
+  orderBy?: InputMaybe<PoolInfo_orderBy>;
   orderDirection?: InputMaybe<OrderDirection>;
-  where?: InputMaybe<LiquidationThreshold_filter>;
+  where?: InputMaybe<PoolInfo_filter>;
   block?: InputMaybe<Block_height>;
   subgraphError?: _SubgraphErrorPolicy_;
 };
@@ -464,8 +490,8 @@ export type Subscription = {
   deposits: Array<Deposit>;
   withdrawal?: Maybe<Withdrawal>;
   withdrawals: Array<Withdrawal>;
-  liquidationThreshold?: Maybe<LiquidationThreshold>;
-  liquidationThresholds: Array<LiquidationThreshold>;
+  poolInfo?: Maybe<PoolInfo>;
+  poolInfos: Array<PoolInfo>;
   uniV3Position?: Maybe<UniV3Position>;
   uniV3Positions: Array<UniV3Position>;
   /** Access to subgraph metadata */
@@ -563,19 +589,19 @@ export type SubscriptionwithdrawalsArgs = {
 };
 
 
-export type SubscriptionliquidationThresholdArgs = {
+export type SubscriptionpoolInfoArgs = {
   id: Scalars['ID'];
   block?: InputMaybe<Block_height>;
   subgraphError?: _SubgraphErrorPolicy_;
 };
 
 
-export type SubscriptionliquidationThresholdsArgs = {
+export type SubscriptionpoolInfosArgs = {
   skip?: InputMaybe<Scalars['Int']>;
   first?: InputMaybe<Scalars['Int']>;
-  orderBy?: InputMaybe<LiquidationThreshold_orderBy>;
+  orderBy?: InputMaybe<PoolInfo_orderBy>;
   orderDirection?: InputMaybe<OrderDirection>;
-  where?: InputMaybe<LiquidationThreshold_filter>;
+  where?: InputMaybe<PoolInfo_filter>;
   block?: InputMaybe<Block_height>;
   subgraphError?: _SubgraphErrorPolicy_;
 };
@@ -605,7 +631,7 @@ export type Subscription_metaArgs = {
 
 export type UniV3Position = {
   id: Scalars['String'];
-  liquidationThreshold: LiquidationThreshold;
+  pool: PoolInfo;
   vault: Vault;
   liquidity: Scalars['BigInt'];
   token0: Scalars['Bytes'];
@@ -637,27 +663,27 @@ export type UniV3Position_filter = {
   id_ends_with_nocase?: InputMaybe<Scalars['String']>;
   id_not_ends_with?: InputMaybe<Scalars['String']>;
   id_not_ends_with_nocase?: InputMaybe<Scalars['String']>;
-  liquidationThreshold?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_not?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_gt?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_lt?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_gte?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_lte?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_in?: InputMaybe<Array<Scalars['String']>>;
-  liquidationThreshold_not_in?: InputMaybe<Array<Scalars['String']>>;
-  liquidationThreshold_contains?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_contains_nocase?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_not_contains?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_not_contains_nocase?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_starts_with?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_starts_with_nocase?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_not_starts_with?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_not_starts_with_nocase?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_ends_with?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_ends_with_nocase?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_not_ends_with?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_not_ends_with_nocase?: InputMaybe<Scalars['String']>;
-  liquidationThreshold_?: InputMaybe<LiquidationThreshold_filter>;
+  pool?: InputMaybe<Scalars['String']>;
+  pool_not?: InputMaybe<Scalars['String']>;
+  pool_gt?: InputMaybe<Scalars['String']>;
+  pool_lt?: InputMaybe<Scalars['String']>;
+  pool_gte?: InputMaybe<Scalars['String']>;
+  pool_lte?: InputMaybe<Scalars['String']>;
+  pool_in?: InputMaybe<Array<Scalars['String']>>;
+  pool_not_in?: InputMaybe<Array<Scalars['String']>>;
+  pool_contains?: InputMaybe<Scalars['String']>;
+  pool_contains_nocase?: InputMaybe<Scalars['String']>;
+  pool_not_contains?: InputMaybe<Scalars['String']>;
+  pool_not_contains_nocase?: InputMaybe<Scalars['String']>;
+  pool_starts_with?: InputMaybe<Scalars['String']>;
+  pool_starts_with_nocase?: InputMaybe<Scalars['String']>;
+  pool_not_starts_with?: InputMaybe<Scalars['String']>;
+  pool_not_starts_with_nocase?: InputMaybe<Scalars['String']>;
+  pool_ends_with?: InputMaybe<Scalars['String']>;
+  pool_ends_with_nocase?: InputMaybe<Scalars['String']>;
+  pool_not_ends_with?: InputMaybe<Scalars['String']>;
+  pool_not_ends_with_nocase?: InputMaybe<Scalars['String']>;
+  pool_?: InputMaybe<PoolInfo_filter>;
   vault?: InputMaybe<Scalars['String']>;
   vault_not?: InputMaybe<Scalars['String']>;
   vault_gt?: InputMaybe<Scalars['String']>;
@@ -747,8 +773,14 @@ export type UniV3Position_filter = {
 
 export type UniV3Position_orderBy =
   | 'id'
-  | 'liquidationThreshold'
+  | 'pool'
+  | 'pool__id'
+  | 'pool__liquidationThreshold'
+  | 'pool__borrowThreshold'
+  | 'pool__minWidth'
   | 'vault'
+  | 'vault__id'
+  | 'vault__vaultNormalizedDebt'
   | 'liquidity'
   | 'token0'
   | 'token1'
@@ -759,10 +791,7 @@ export type UniV3Position_orderBy =
 
 export type Vault = {
   id: Scalars['String'];
-  vaultDebt: Scalars['BigInt'];
-  stabilisationFeeVaultSnapshot: Scalars['BigInt'];
-  globalStabilisationFeePerUSDVaultSnapshotD: Scalars['BigInt'];
-  lastDebtUpdate: Scalars['BigInt'];
+  vaultNormalizedDebt: Scalars['BigInt'];
   uniV3Positions: Array<UniV3Position>;
 };
 
@@ -796,38 +825,14 @@ export type Vault_filter = {
   id_ends_with_nocase?: InputMaybe<Scalars['String']>;
   id_not_ends_with?: InputMaybe<Scalars['String']>;
   id_not_ends_with_nocase?: InputMaybe<Scalars['String']>;
-  vaultDebt?: InputMaybe<Scalars['BigInt']>;
-  vaultDebt_not?: InputMaybe<Scalars['BigInt']>;
-  vaultDebt_gt?: InputMaybe<Scalars['BigInt']>;
-  vaultDebt_lt?: InputMaybe<Scalars['BigInt']>;
-  vaultDebt_gte?: InputMaybe<Scalars['BigInt']>;
-  vaultDebt_lte?: InputMaybe<Scalars['BigInt']>;
-  vaultDebt_in?: InputMaybe<Array<Scalars['BigInt']>>;
-  vaultDebt_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
-  stabilisationFeeVaultSnapshot?: InputMaybe<Scalars['BigInt']>;
-  stabilisationFeeVaultSnapshot_not?: InputMaybe<Scalars['BigInt']>;
-  stabilisationFeeVaultSnapshot_gt?: InputMaybe<Scalars['BigInt']>;
-  stabilisationFeeVaultSnapshot_lt?: InputMaybe<Scalars['BigInt']>;
-  stabilisationFeeVaultSnapshot_gte?: InputMaybe<Scalars['BigInt']>;
-  stabilisationFeeVaultSnapshot_lte?: InputMaybe<Scalars['BigInt']>;
-  stabilisationFeeVaultSnapshot_in?: InputMaybe<Array<Scalars['BigInt']>>;
-  stabilisationFeeVaultSnapshot_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
-  globalStabilisationFeePerUSDVaultSnapshotD?: InputMaybe<Scalars['BigInt']>;
-  globalStabilisationFeePerUSDVaultSnapshotD_not?: InputMaybe<Scalars['BigInt']>;
-  globalStabilisationFeePerUSDVaultSnapshotD_gt?: InputMaybe<Scalars['BigInt']>;
-  globalStabilisationFeePerUSDVaultSnapshotD_lt?: InputMaybe<Scalars['BigInt']>;
-  globalStabilisationFeePerUSDVaultSnapshotD_gte?: InputMaybe<Scalars['BigInt']>;
-  globalStabilisationFeePerUSDVaultSnapshotD_lte?: InputMaybe<Scalars['BigInt']>;
-  globalStabilisationFeePerUSDVaultSnapshotD_in?: InputMaybe<Array<Scalars['BigInt']>>;
-  globalStabilisationFeePerUSDVaultSnapshotD_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
-  lastDebtUpdate?: InputMaybe<Scalars['BigInt']>;
-  lastDebtUpdate_not?: InputMaybe<Scalars['BigInt']>;
-  lastDebtUpdate_gt?: InputMaybe<Scalars['BigInt']>;
-  lastDebtUpdate_lt?: InputMaybe<Scalars['BigInt']>;
-  lastDebtUpdate_gte?: InputMaybe<Scalars['BigInt']>;
-  lastDebtUpdate_lte?: InputMaybe<Scalars['BigInt']>;
-  lastDebtUpdate_in?: InputMaybe<Array<Scalars['BigInt']>>;
-  lastDebtUpdate_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
+  vaultNormalizedDebt?: InputMaybe<Scalars['BigInt']>;
+  vaultNormalizedDebt_not?: InputMaybe<Scalars['BigInt']>;
+  vaultNormalizedDebt_gt?: InputMaybe<Scalars['BigInt']>;
+  vaultNormalizedDebt_lt?: InputMaybe<Scalars['BigInt']>;
+  vaultNormalizedDebt_gte?: InputMaybe<Scalars['BigInt']>;
+  vaultNormalizedDebt_lte?: InputMaybe<Scalars['BigInt']>;
+  vaultNormalizedDebt_in?: InputMaybe<Array<Scalars['BigInt']>>;
+  vaultNormalizedDebt_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
   uniV3Positions_?: InputMaybe<UniV3Position_filter>;
   /** Filter for the block changed event. */
   _change_block?: InputMaybe<BlockChangedFilter>;
@@ -837,10 +842,7 @@ export type Vault_filter = {
 
 export type Vault_orderBy =
   | 'id'
-  | 'vaultDebt'
-  | 'stabilisationFeeVaultSnapshot'
-  | 'globalStabilisationFeePerUSDVaultSnapshotD'
-  | 'lastDebtUpdate'
+  | 'vaultNormalizedDebt'
   | 'uniV3Positions';
 
 export type Withdrawal = {
@@ -908,6 +910,8 @@ export type Withdrawal_filter = {
 export type Withdrawal_orderBy =
   | 'id'
   | 'vault'
+  | 'vault__id'
+  | 'vault__vaultNormalizedDebt'
   | 'uniV3Position';
 
 export type _Block_ = {
@@ -1043,10 +1047,10 @@ export type ResolversTypes = ResolversObject<{
   Float: ResolverTypeWrapper<Scalars['Float']>;
   ID: ResolverTypeWrapper<Scalars['ID']>;
   Int: ResolverTypeWrapper<Scalars['Int']>;
-  LiquidationThreshold: ResolverTypeWrapper<LiquidationThreshold>;
-  LiquidationThreshold_filter: LiquidationThreshold_filter;
-  LiquidationThreshold_orderBy: LiquidationThreshold_orderBy;
   OrderDirection: OrderDirection;
+  PoolInfo: ResolverTypeWrapper<PoolInfo>;
+  PoolInfo_filter: PoolInfo_filter;
+  PoolInfo_orderBy: PoolInfo_orderBy;
   Query: ResolverTypeWrapper<{}>;
   String: ResolverTypeWrapper<Scalars['String']>;
   Subscription: ResolverTypeWrapper<{}>;
@@ -1081,8 +1085,8 @@ export type ResolversParentTypes = ResolversObject<{
   Float: Scalars['Float'];
   ID: Scalars['ID'];
   Int: Scalars['Int'];
-  LiquidationThreshold: LiquidationThreshold;
-  LiquidationThreshold_filter: LiquidationThreshold_filter;
+  PoolInfo: PoolInfo;
+  PoolInfo_filter: PoolInfo_filter;
   Query: {};
   String: Scalars['String'];
   Subscription: {};
@@ -1145,9 +1149,11 @@ export type DepositResolvers<ContextType = MeshContext, ParentType extends Resol
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
-export type LiquidationThresholdResolvers<ContextType = MeshContext, ParentType extends ResolversParentTypes['LiquidationThreshold'] = ResolversParentTypes['LiquidationThreshold']> = ResolversObject<{
+export type PoolInfoResolvers<ContextType = MeshContext, ParentType extends ResolversParentTypes['PoolInfo'] = ResolversParentTypes['PoolInfo']> = ResolversObject<{
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   liquidationThreshold?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
+  borrowThreshold?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
+  minWidth?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
@@ -1162,8 +1168,8 @@ export type QueryResolvers<ContextType = MeshContext, ParentType extends Resolve
   deposits?: Resolver<Array<ResolversTypes['Deposit']>, ParentType, ContextType, RequireFields<QuerydepositsArgs, 'skip' | 'first' | 'subgraphError'>>;
   withdrawal?: Resolver<Maybe<ResolversTypes['Withdrawal']>, ParentType, ContextType, RequireFields<QuerywithdrawalArgs, 'id' | 'subgraphError'>>;
   withdrawals?: Resolver<Array<ResolversTypes['Withdrawal']>, ParentType, ContextType, RequireFields<QuerywithdrawalsArgs, 'skip' | 'first' | 'subgraphError'>>;
-  liquidationThreshold?: Resolver<Maybe<ResolversTypes['LiquidationThreshold']>, ParentType, ContextType, RequireFields<QueryliquidationThresholdArgs, 'id' | 'subgraphError'>>;
-  liquidationThresholds?: Resolver<Array<ResolversTypes['LiquidationThreshold']>, ParentType, ContextType, RequireFields<QueryliquidationThresholdsArgs, 'skip' | 'first' | 'subgraphError'>>;
+  poolInfo?: Resolver<Maybe<ResolversTypes['PoolInfo']>, ParentType, ContextType, RequireFields<QuerypoolInfoArgs, 'id' | 'subgraphError'>>;
+  poolInfos?: Resolver<Array<ResolversTypes['PoolInfo']>, ParentType, ContextType, RequireFields<QuerypoolInfosArgs, 'skip' | 'first' | 'subgraphError'>>;
   uniV3Position?: Resolver<Maybe<ResolversTypes['UniV3Position']>, ParentType, ContextType, RequireFields<QueryuniV3PositionArgs, 'id' | 'subgraphError'>>;
   uniV3Positions?: Resolver<Array<ResolversTypes['UniV3Position']>, ParentType, ContextType, RequireFields<QueryuniV3PositionsArgs, 'skip' | 'first' | 'subgraphError'>>;
   _meta?: Resolver<Maybe<ResolversTypes['_Meta_']>, ParentType, ContextType, Partial<Query_metaArgs>>;
@@ -1180,8 +1186,8 @@ export type SubscriptionResolvers<ContextType = MeshContext, ParentType extends 
   deposits?: SubscriptionResolver<Array<ResolversTypes['Deposit']>, "deposits", ParentType, ContextType, RequireFields<SubscriptiondepositsArgs, 'skip' | 'first' | 'subgraphError'>>;
   withdrawal?: SubscriptionResolver<Maybe<ResolversTypes['Withdrawal']>, "withdrawal", ParentType, ContextType, RequireFields<SubscriptionwithdrawalArgs, 'id' | 'subgraphError'>>;
   withdrawals?: SubscriptionResolver<Array<ResolversTypes['Withdrawal']>, "withdrawals", ParentType, ContextType, RequireFields<SubscriptionwithdrawalsArgs, 'skip' | 'first' | 'subgraphError'>>;
-  liquidationThreshold?: SubscriptionResolver<Maybe<ResolversTypes['LiquidationThreshold']>, "liquidationThreshold", ParentType, ContextType, RequireFields<SubscriptionliquidationThresholdArgs, 'id' | 'subgraphError'>>;
-  liquidationThresholds?: SubscriptionResolver<Array<ResolversTypes['LiquidationThreshold']>, "liquidationThresholds", ParentType, ContextType, RequireFields<SubscriptionliquidationThresholdsArgs, 'skip' | 'first' | 'subgraphError'>>;
+  poolInfo?: SubscriptionResolver<Maybe<ResolversTypes['PoolInfo']>, "poolInfo", ParentType, ContextType, RequireFields<SubscriptionpoolInfoArgs, 'id' | 'subgraphError'>>;
+  poolInfos?: SubscriptionResolver<Array<ResolversTypes['PoolInfo']>, "poolInfos", ParentType, ContextType, RequireFields<SubscriptionpoolInfosArgs, 'skip' | 'first' | 'subgraphError'>>;
   uniV3Position?: SubscriptionResolver<Maybe<ResolversTypes['UniV3Position']>, "uniV3Position", ParentType, ContextType, RequireFields<SubscriptionuniV3PositionArgs, 'id' | 'subgraphError'>>;
   uniV3Positions?: SubscriptionResolver<Array<ResolversTypes['UniV3Position']>, "uniV3Positions", ParentType, ContextType, RequireFields<SubscriptionuniV3PositionsArgs, 'skip' | 'first' | 'subgraphError'>>;
   _meta?: SubscriptionResolver<Maybe<ResolversTypes['_Meta_']>, "_meta", ParentType, ContextType, Partial<Subscription_metaArgs>>;
@@ -1189,7 +1195,7 @@ export type SubscriptionResolvers<ContextType = MeshContext, ParentType extends 
 
 export type UniV3PositionResolvers<ContextType = MeshContext, ParentType extends ResolversParentTypes['UniV3Position'] = ResolversParentTypes['UniV3Position']> = ResolversObject<{
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  liquidationThreshold?: Resolver<ResolversTypes['LiquidationThreshold'], ParentType, ContextType>;
+  pool?: Resolver<ResolversTypes['PoolInfo'], ParentType, ContextType>;
   vault?: Resolver<ResolversTypes['Vault'], ParentType, ContextType>;
   liquidity?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
   token0?: Resolver<ResolversTypes['Bytes'], ParentType, ContextType>;
@@ -1203,10 +1209,7 @@ export type UniV3PositionResolvers<ContextType = MeshContext, ParentType extends
 
 export type VaultResolvers<ContextType = MeshContext, ParentType extends ResolversParentTypes['Vault'] = ResolversParentTypes['Vault']> = ResolversObject<{
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
-  vaultDebt?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
-  stabilisationFeeVaultSnapshot?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
-  globalStabilisationFeePerUSDVaultSnapshotD?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
-  lastDebtUpdate?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
+  vaultNormalizedDebt?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
   uniV3Positions?: Resolver<Array<ResolversTypes['UniV3Position']>, ParentType, ContextType, RequireFields<VaultuniV3PositionsArgs, 'skip' | 'first'>>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
@@ -1239,7 +1242,7 @@ export type Resolvers<ContextType = MeshContext> = ResolversObject<{
   DebtBurnedEntity?: DebtBurnedEntityResolvers<ContextType>;
   DebtMintedEntity?: DebtMintedEntityResolvers<ContextType>;
   Deposit?: DepositResolvers<ContextType>;
-  LiquidationThreshold?: LiquidationThresholdResolvers<ContextType>;
+  PoolInfo?: PoolInfoResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
   UniV3Position?: UniV3PositionResolvers<ContextType>;
@@ -1300,7 +1303,7 @@ const cdpTransforms = [];
 const additionalTypeDefs = [] as any[];
 const cdpHandler = new GraphqlHandler({
               name: "cdp",
-              config: {"endpoint":"https://api.thegraph.com/subgraphs/name/yusupovai/cdp"},
+              config: {"endpoint":"http://localhost:8765/subgraphs/name/yusupovai/cdp"},
               baseDir,
               cache,
               pubsub,
@@ -1390,21 +1393,19 @@ export type VaultsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type VaultsQuery = { vaults: Array<(
-    Pick<Vault, 'id' | 'vaultDebt' | 'stabilisationFeeVaultSnapshot' | 'globalStabilisationFeePerUSDVaultSnapshotD'>
+    Pick<Vault, 'id' | 'vaultNormalizedDebt'>
     & { uniV3Positions: Array<(
       Pick<UniV3Position, 'liquidity' | 'tickLower' | 'tickUpper' | 'token0' | 'token1' | 'amount0' | 'amount1'>
-      & { liquidationThreshold: Pick<LiquidationThreshold, 'liquidationThreshold'> }
+      & { pool: Pick<PoolInfo, 'liquidationThreshold'> }
     )> }
   )> };
 
 
 export const VaultsDocument = gql`
     query Vaults {
-  vaults(where: {vaultDebt_gt: "0"}) {
+  vaults(where: {vaultNormalizedDebt_gt: "0"}) {
     id
-    vaultDebt
-    stabilisationFeeVaultSnapshot
-    globalStabilisationFeePerUSDVaultSnapshotD
+    vaultNormalizedDebt
     uniV3Positions {
       liquidity
       tickLower
@@ -1413,7 +1414,7 @@ export const VaultsDocument = gql`
       token1
       amount0
       amount1
-      liquidationThreshold {
+      pool {
         liquidationThreshold
       }
     }

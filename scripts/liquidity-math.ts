@@ -1,4 +1,5 @@
 import { BigNumber } from "ethers";
+import { Q96 } from "./constants";
 
 export const getAmountsForLiquidty = (
     sqrtRatioX96: BigNumber,
@@ -35,5 +36,5 @@ const getAmount1ForLiquidity = (sqrtRatioAX96: BigNumber, sqrtRatioBX96: BigNumb
     if (sqrtRatioAX96.gt(sqrtRatioBX96)) {
         [sqrtRatioAX96, sqrtRatioBX96] = [sqrtRatioBX96, sqrtRatioAX96];
     }
-    return liquidity.mul(sqrtRatioBX96.sub(sqrtRatioAX96)).div(BigNumber.from(2).pow(96));
+    return liquidity.mul(sqrtRatioBX96.sub(sqrtRatioAX96)).div(Q96);
 };

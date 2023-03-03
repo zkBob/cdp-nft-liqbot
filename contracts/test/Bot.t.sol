@@ -6,10 +6,11 @@ import {Vault} from "@cdp/src/Vault.sol";
 import "@cdp/src/VaultRegistry.sol";
 import "@cdp/src/oracles/UniV3Oracle.sol";
 import "@cdp/test/mocks/MockOracle.sol";
-import "@cdp/lib/@zkbob/src/proxy/EIP1967Proxy.sol";
+import {EIP1967Proxy} from "@zkbob/proxy/EIP1967Proxy.sol";
+import {BobToken} from "@zkbob/BobToken.sol";
 import "./BotConfig.sol";
 import "./Utilities.sol";
-import {FlashMinter} from "./FlashMinter.sol";
+import {FlashMinter} from "@zkbob/minters/FlashMinter.sol";
 import "../src/Bot.sol";
 import "../src/helpers/UniV3Helper.sol";
 import "../src/helpers/PathExecutorHelper.sol";
@@ -22,50 +23,52 @@ contract BotPolygonTest is Test, Utilities {
     Bot bot;
     UniV3Helper uniHelper;
     PathExecutorHelper pathHelper;
-    FlashMinter minter;
+    address flashMinter;
+    uint32 DENOMINATOR = 10 ** 9;
 
     function setupCDP() public {
         oracle = new MockOracle();
         oracle.setPrice(wmatic, (uint256(1 << 96) * 78) / 100);
         oracle.setPrice(usdc, uint256(1 << 96) * (10 ** 12));
-        IERC20(usdc).approve(UniV3PositionManager, type(uint256).max);
-        IERC20(wmatic).approve(UniV3PositionManager, type(uint256).max);
         address tokenPool = IUniswapV3Factory(UniV3Factory).getPool(wmatic, usdc, 100);
-        treasury = getNextUserAddress();
-        VaultRegistry registry = new VaultRegistry("name", "symbol", "");
-        registry = VaultRegistry(address(new EIP1967Proxy(address(this), address(registry), "")));
-        cdp = new Vault(
-            INonfungiblePositionManager(UniV3PositionManager),
-            INFTOracle(new UniV3Oracle(UniV3PositionManager, IOracle(address(oracle)), 100000000000000000)),
-            treasury,
-            bob,
-            address(registry)
-        );
-        bytes memory initData = abi.encodeWithSelector(
-            Vault.initialize.selector,
-            address(this),
-            10 ** 7,
-            (10 ** 6) * (10 ** 18)
-        );
-        cdp = Vault(address(new EIP1967Proxy(address(this), address(cdp), initData)));
+
+        vm.startPrank(Ownable(bob).owner());
+        flashMinter = deployFlashMinter(IMintableBurnableERC20(bob));
+        address treasury = deployTreasury(IMintableBurnableERC20(bob));
+        address debtMinter = deployDebtMinter(IMintableBurnableERC20(bob), treasury);
+
+        VaultRegistry registry = deployVaultRegistry(address(this));
+        cdp = deployCDP(address(this), bob, UniV3PositionManager, treasury, debtMinter, oracle, registry);
+        vm.stopPrank();
         registry.setMinter(address(cdp), true);
         IERC20(bob).approve(address(cdp), type(uint256).max);
+
         address[] memory depositors = new address[](1);
         depositors[0] = address(this);
         cdp.addDepositorsToAllowlist(depositors);
-        cdp.changeMaxNftsPerVault(5);
-        cdp.setWhitelistedPool(tokenPool);
-        cdp.setLiquidationThreshold(tokenPool, 6e8); // 0.6 * DENOMINATOR == 60%
-        minter = new FlashMinter(bob, type(uint96).max, getNextUserAddress(), 10 ** 14, type(uint96).max);
+        cdp.changeLiquidationPremium(DENOMINATOR / 2);
+        cdp.changeMaxDebtPerVault(type(uint256).max);
+        cdp.changeMaxNftsPerVault(uint8(5));
+        ICDP.PoolParams memory params = ICDP.PoolParams({
+            liquidationThreshold: (DENOMINATOR / 10) * 6,
+            borrowThreshold: (DENOMINATOR / 10) * 6,
+            minWidth: 0
+        });
+        cdp.setPoolParams(tokenPool, params);
+        cdp.makeLiquidationsPublic();
+    }
+
+    function upgradeBob() public {
+        BobToken impl = new BobToken(bob);
         vm.startPrank(Ownable(bob).owner());
-        IMintableBurnableERC20(bob).updateMinter(address(minter), true, true);
-        IMintableBurnableERC20(bob).updateMinter(address(cdp), true, true);
+        EIP1967Proxy(payable(bob)).upgradeTo(address(impl));
         vm.stopPrank();
     }
 
     function setUp() public {
+        upgradeBob();
         setupCDP();
-        bot = new Bot(address(this), address(minter));
+        bot = new Bot(address(this), flashMinter);
         uniHelper = new UniV3Helper();
         pathHelper = new PathExecutorHelper();
         bot.approve(IERC20(wmatic), address(pathHelper), type(uint256).max);
@@ -74,7 +77,6 @@ contract BotPolygonTest is Test, Utilities {
         pathHelper.approveAll(IERC20(usdc), address(uniHelper));
         uniHelper.approveAll(IERC20(usdc), OneInchAggregator);
         uniHelper.approveAll(IERC20(wmatic), OneInchAggregator);
-        vm.warp(block.timestamp + 24 * 60 * 60);
     }
 
     function testSimple() public {
@@ -84,7 +86,7 @@ contract BotPolygonTest is Test, Utilities {
         uint256 vaultId = cdp.mintDebtFromScratch(nfts[0], 700 * (10 ** 18));
         oracle.setPrice(wmatic, uint256(1 << 96) / 10);
         uint256 balanceBefore = IERC20(bob).balanceOf(address(this));
-        liquidate(vaultId, nfts, uniHelper, pathHelper, cdp, bot, address(minter));
+        liquidate(vaultId, nfts, uniHelper, pathHelper, cdp, bot, flashMinter);
         uint256 balanceAfter = IERC20(bob).balanceOf(address(this));
         assertGt(balanceAfter, balanceBefore + 500 * (10 ** 18));
         assertEq(IERC20(usdc).balanceOf(address(bot)), 0);
