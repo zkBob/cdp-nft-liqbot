@@ -1,9 +1,7 @@
 query Vaults {
-  vaults (where: { vaultDebt_gt: "0" }) {
+  vaults (where: { vaultNormalizedDebt_gt: "0" }) {
     id
-    vaultDebt
-    stabilisationFeeVaultSnapshot
-    globalStabilisationFeePerUSDVaultSnapshotD
+    vaultNormalizedDebt
     uniV3Positions {
       liquidity
       tickLower
@@ -12,7 +10,7 @@ query Vaults {
       token1
       amount0
       amount1
-      liquidationThreshold {
+      pool {
         liquidationThreshold
       }
     }

@@ -12,9 +12,10 @@ import "./BotConfig.sol";
 import "../src/Bot.sol";
 import "../src/helpers/UniV3Helper.sol";
 import "../src/helpers/PathExecutorHelper.sol";
+import "../src/test-deployment/Deployment.sol";
 
 //common utilities for forge tests
-contract Utilities is Test, BotConfig {
+contract Utilities is Deployment, Test, BotConfig {
     bytes32 internal nextUser = keccak256(abi.encodePacked("user address"));
 
     function getNextUserAddress() public returns (address payable) {
@@ -95,6 +96,9 @@ contract Utilities is Test, BotConfig {
 
         deal(token0, address(this), amount0 * 100);
         deal(token1, address(this), amount1 * 100);
+
+        IERC20(token0).approve(UniV3PositionManager, type(uint256).max);
+        IERC20(token1).approve(UniV3PositionManager, type(uint256).max);
         // vm.deal(address(this), 1 ether);
 
         (, int24 currentTick, , , , , ) = pool.slot0();

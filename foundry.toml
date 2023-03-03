@@ -3,8 +3,9 @@ src = 'contracts/src'
 out = 'contracts/out'
 test = 'contracts/test'
 libs = ['contracts/lib']
-remappings = ["@solmate/=contracts/lib/solmate/", "@cdp/=contracts/lib/stable-nft/", "@univ3-core/=contracts/lib/stable-nft/lib/@uniswap/v3-core/contracts/", "@univ3-periphery/=contracts/lib/stable-nft/lib/@uniswap/v3-periphery/contracts/", "@cdp-lib/=contracts/lib/stable-nft/src/libraries/external/", "@zkbob/=contracts/lib/stable-nft/lib/@zkbob/src/"]
+remappings = ["@solmate/=contracts/lib/solmate/", "@cdp/=contracts/lib/stable-nft/", "@univ3-core/=contracts/lib/stable-nft/lib/@uniswap/v3-core/contracts/", "@univ3-periphery/=contracts/lib/stable-nft/lib/@uniswap/v3-periphery/contracts/", "@cdp-lib/=contracts/lib/stable-nft/src/libraries/external/", "@zkbob/=contracts/lib/stable-nft/lib/zkbob-contracts/src/"]
 optimizer = true
+fs_permissions = [{ access = 'read-write', path = './contracts' }]
 
 [profile.default.optimizer_details]
 yul = true

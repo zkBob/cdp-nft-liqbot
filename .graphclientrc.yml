@@ -3,7 +3,7 @@ sources:
   - name: cdp
     handler:
       graphql:
-        endpoint: https://api.thegraph.com/subgraphs/name/yusupovai/cdp
+        endpoint: http://localhost:8765/subgraphs/name/yusupovai/cdp
     transforms:
       - autoPagination:
           validateSchema: true
