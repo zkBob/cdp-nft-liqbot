@@ -63,11 +63,11 @@ contract EnvSetup is Deployment {
 
         vm.stopBroadcast();
 
-        require(address(token) == 0x8b0D0EEB49838c7ce6904A947A4345ef117Ea12b, "Wrong token address");
-        require(address(flashMinter) == 0x835A5c38CF5D5EF8Aa91A3FB0df6aB62eC2f0984, "Wrong minter address");
-        require(address(registry) == 0x29701D7e3f5E2FA7b7301254e717D8340cD67aF3, "Wrong registry address");
-        require(address(cdp) == 0x313b0560fB65Df13F843Ff30Cab3393d8757A77D, "Wrong CDP address");
-        require(address(bot) == 0x480333dE0400600a090B3843d97aAe8470fF6bc8, "Wrong bot address");
+        require(address(token) == 0x31981cB55231c31e02CA09f163b3449Eaeae8418, "Wrong token address");
+        require(address(flashMinter) == 0x53fA4991ce88a6c98BC28C73f8063969451c6cB7, "Wrong minter address");
+        require(address(registry) == 0x014d013a2515E893E1be713D6C6cf1Fbc8684C64, "Wrong registry address");
+        require(address(cdp) == 0x901EE5CeD8Cb8958342F0C21CC0CFcD0e37adEA5, "Wrong CDP address");
+        require(address(bot) == 0x2eB97CED8A8bd589D2D799d73393a8D25E70484B, "Wrong bot address");
         require(address(uniV3Amounts) == 0xd5BC70A3e9737CccEfb8cAe924f74Ea06bAAB36F, "Wrong uniV3Amounts address");
 
         console2.log("Token address: ", address(token));
