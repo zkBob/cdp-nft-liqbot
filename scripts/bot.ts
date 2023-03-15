@@ -1,13 +1,13 @@
 import { BigNumber, ethers } from "ethers";
 import { NonceManager } from "@ethersproject/experimental";
 import { Vault } from "../.graphclient";
-import { readFileSync } from "fs";
 import { DENOMINATOR } from "./constants";
 import axios from "axios";
 import url from "url";
-import { AbiCoder, Interface } from "ethers/lib/utils";
+import { Interface } from "ethers/lib/utils";
 
 export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: ethers.providers.Provider) => {
+    console.log("In liquidation");
     const bot = new ethers.Contract(
         process.env.BOT as string,
         [
@@ -75,13 +75,21 @@ const buildAllSwapData = async (bot: string, nfts: BigNumber[], provider: ethers
     const result: { [key: string]: BigNumber } = await getActualTokenAmounts(nfts, provider);
     let swapData: string[] = [];
     let swapAddresses: string[] = [];
+    const { chainId } = await provider.getNetwork();
     for (let token in result) {
         if (token == process.env.TOKEN || result[token].eq(0)) {
             continue;
         }
-        const { address, data } = await buildSwapData(bot, token, result[token], provider);
+        const { address, data } = await buildSwapData(bot, token, result[token], chainId);
         swapAddresses.push(address);
         swapData.push(data);
+    }
+    if (process.env.TRUE_TOKEN) {
+        // this branch is only for testing
+        // wrap BOB to Mock token
+        swapAddresses.push(process.env.TOKEN as string);
+        const wrapperInterface = new Interface(["function wrapAll()"]);
+        swapData.push(wrapperInterface.encodeFunctionData("wrapAll", []));
     }
     return { swapAddresses, swapData };
 };
@@ -109,39 +117,22 @@ const getActualTokenAmounts = async (nfts: BigNumber[], provider: ethers.provide
     return result;
 };
 
-const buildSwapData = async (
-    bot: string,
-    tokenFrom: string,
-    amount: BigNumber,
-    provider: ethers.providers.Provider
-) => {
-    // TODO: query calldata from 1inch
-    const factory = new ethers.Contract(
-        process.env.FACTORY as string,
-        ["function getPool(address token0, address token1, uint24 fee) view returns (address)"],
-        provider
-    );
-    const pool = new ethers.Contract(
-        await factory.getPool(tokenFrom, process.env.TOKEN, 3000),
-        ["function token0() view returns (address)"],
-        provider
-    );
-    let poolID = BigNumber.from(pool.address);
-    const flag = (await pool.token0()) == tokenFrom;
-    if (!flag) {
-        poolID = poolID.add(BigNumber.from(2).pow(255));
-    }
-    const coder = new ethers.utils.AbiCoder();
-    const uniV3Data = coder.encode(["uint256[]", "address"], [[poolID], process.env.ROUTER]);
-    const pathHelperInterface = new ethers.utils.Interface([
-        "function swap(address srcToken, tuple(uint16 part, address tokenFrom, address helper, bytes data)[] data, address destToken)",
-    ]);
+const buildSwapData = async (bot: string, tokenFrom: string, amount: BigNumber, chainId: number) => {
+    const payload = new url.URLSearchParams({
+        fromTokenAddress: tokenFrom,
+        toTokenAddress: process.env.TRUE_TOKEN ? (process.env.TRUE_TOKEN as string) : (process.env.TOKEN as string),
+        amount: amount.mul(99).div(100).toString(),
+        fromAddress: bot,
+        disableEstimate: "true",
+        slippage: "10",
+    });
+    const {
+        data: { tx },
+    } = await axios.get(`${process.env.BASE_API_URL}/${chainId}/swap?${payload}`);
+    console.log("Data: ", tx.data);
+    console.log("Address: ", tx.to);
     return {
-        address: process.env.PATH_HELPER as string,
-        data: pathHelperInterface.encodeFunctionData("swap", [
-            tokenFrom,
-            [{ part: 100, tokenFrom: tokenFrom, helper: process.env.UNI_V3_HELPER, data: uniV3Data }],
-            process.env.TOKEN,
-        ]),
+        address: tx.to as string,
+        data: tx.data as string,
     };
 };
