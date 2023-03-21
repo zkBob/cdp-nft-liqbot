@@ -4,5 +4,10 @@ pragma solidity ^0.8.0;
 import "@cdp/lib/openzeppelin-contracts/contracts/interfaces/IERC20.sol";
 
 interface ISwapHelper {
-    function swap(IERC20 srcToken, uint256 amount, bytes calldata) external returns (uint256);
+    /// @notice swaps token on uniV3 via 1inch router
+    /// @param srcToken token to swap
+    /// @param amount swapping amount
+    /// @param data bytes encoding the route for swap
+    /// @return
+    function swap(IERC20 srcToken, uint256 amount, bytes calldata data) external returns (uint256 amountOut);
 }
