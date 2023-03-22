@@ -8,6 +8,6 @@ interface ISwapHelper {
     /// @param srcToken token to swap
     /// @param amount swapping amount
     /// @param data bytes encoding the route for swap
-    /// @return
+    /// @return amountOut amoun of tokens got from swap
     function swap(IERC20 srcToken, uint256 amount, bytes calldata data) external returns (uint256 amountOut);
 }
