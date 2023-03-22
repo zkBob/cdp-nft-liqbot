@@ -13,6 +13,14 @@ Run `yarn test` for running all tests.
 
 Run `yarn test:better` if you also set `ETHERSCAN_API_KEY`. This command allow showing readable trace for external contracts.
 
+## Integration testing
+In order to do integration testing, following steps should be done:
+1. `docker-compose up` in this repository to start needed services
+2. `yarn create-local` and `yarn deploy-local` in the graph repository to deploy the graph indexer
+3. `yarn test-deploy` in this repository to deploy CDP and bot
+4. `sh bot.sh` to start a bot
+In the bot logs you will see the details of liquidation.
+
 ## References
 * [Subgraph repository](https://github.com/zkBob/cdp-nft-subgraph): contains the graph manifest for data indexing
 * [CDP repository](https://github.com/zkBob/bob-cdp-contracts): implementation of CDP module
