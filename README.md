@@ -16,7 +16,7 @@ Run `yarn test:better` if you also set `ETHERSCAN_API_KEY`. This command allow s
 ## Integration testing
 In order to do integration testing, following steps should be done:
 1. `docker-compose up` in this repository to start needed services
-2. `yarn create-local` and `yarn deploy-local` in the graph repository to deploy the graph indexer
+2. `yarn create-local` and `yarn deploy-local` in the graph repository to deploy the graph indexer. You should set an address and start block in the `subgraph.yaml` before deploying the graph indexer
 3. `yarn test-deploy` in this repository to deploy CDP and bot
 4. `sh bot.sh` to start a bot
 In the bot logs you will see the details of liquidation.
