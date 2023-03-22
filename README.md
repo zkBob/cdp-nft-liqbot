@@ -16,8 +16,3 @@ Run `yarn test:better` if you also set `ETHERSCAN_API_KEY`. This command allow s
 ## References
 * [Subgraph repository](https://github.com/zkBob/cdp-nft-subgraph): contains the graph manifest for data indexing
 * [CDP repository](https://github.com/zkBob/bob-cdp-contracts): implementation of CDP module
-
-How to Use
-To use this bot, you will need to deploy both the smart contract and the script to a blockchain network that supports the CDP module. You will also need to configure the bot with your system's specific parameters, such as the collateralization ratio threshold and the percentage of collateral to be sold in a liquidation event.
-
-Once the bot is deployed and configured, it will automatically monitor and manage the CDP module, executing liquidations as necessary to maintain the stability of the system.
