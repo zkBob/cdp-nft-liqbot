@@ -16,6 +16,7 @@ import {UniV3Amounts} from "../helpers/UniV3Amounts.sol";
 
 contract Deployment is Script {
     SingletonFactory factory = SingletonFactory(0xce0042B868300000d44A59004Da54A005ffdcf9f);
+
     function deploy(bytes memory _initCode) internal returns (address payable createdContract) {
         bytes32 _salt = bytes32(uint256(555));
         assembly {

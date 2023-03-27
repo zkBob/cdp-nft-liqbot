@@ -30,9 +30,12 @@ const main = async () => {
     logger.info("STARTED");
     while (true) {
         const toIgnore = new Set(
-            fs.readFileSync('./scripts/vaults.ignore', 'utf-8').split('\n').map(x => x.replace(" ", ""))
+            fs
+                .readFileSync("./scripts/vaults.ignore", "utf-8")
+                .split("\n")
+                .map((x) => x.replace(" ", ""))
         );
-        console.log(toIgnore)
+        console.log(toIgnore);
         const start = performance.now();
         try {
             const vaults: Vault[] = (await execute(VaultsDocument, {})).data.vaults;
@@ -41,7 +44,7 @@ const main = async () => {
             for (let i = 0; i < vaults.length; ++i) {
                 const vault = vaults[i];
                 if (toIgnore.has(vault.id)) {
-                    continue
+                    continue;
                 }
                 if (await liquidationNeeded(vault, tokenPricesX96, normalizationRate)) {
                     await liquidate(vault, cdp, provider);
