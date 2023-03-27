@@ -90,6 +90,7 @@ contract Bot is IERC3156FlashBorrower {
         // swapping all tokens for the bob
         executeCalls(decoded.swapAddresses, decoded.swapData);
 
+        require(IERC20(token).balanceOf(address(this)) >= amount + fee, "Not enough tokens after swaps");
         IERC20(token).approve(msg.sender, amount + fee);
         return keccak256("ERC3156FlashBorrower.onFlashLoan");
     }

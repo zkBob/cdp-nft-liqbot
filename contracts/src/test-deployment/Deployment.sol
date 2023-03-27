@@ -15,7 +15,13 @@ import "./SingletonFactory.sol";
 import {UniV3Amounts} from "../helpers/UniV3Amounts.sol";
 
 contract Deployment is Script {
-    SingletonFactory constant factory = SingletonFactory(0xce0042B868300000d44A59004Da54A005ffdcf9f);
+    SingletonFactory factory = SingletonFactory(0xce0042B868300000d44A59004Da54A005ffdcf9f);
+    function deploy(bytes memory _initCode) internal returns (address payable createdContract) {
+        bytes32 _salt = bytes32(uint256(555));
+        assembly {
+            createdContract := create2(0, add(_initCode, 0x20), mload(_initCode), _salt)
+        }
+    }
 
     function deployTreasury(IMintableBurnableERC20 token) internal returns (address) {
         bytes memory creationCode = bytes.concat(
@@ -32,7 +38,7 @@ contract Deployment is Script {
             vm.getCode("contracts/out/FlashMinter.sol/FlashMinter.json"),
             abi.encode(address(token), type(uint96).max, address(0), 0, type(uint96).max)
         );
-        address minter = factory.deploy(creationCode, bytes32(uint256(555)));
+        address minter = deploy(creationCode);
         token.updateMinter(minter, true, true);
         return minter;
     }
@@ -49,7 +55,7 @@ contract Deployment is Script {
             vm.getCode("contracts/out/EIP1967Proxy.sol/EIP1967Proxy.json"),
             abi.encode(admin, address(impl), "")
         );
-        return VaultRegistry(factory.deploy(creationCode, bytes32(uint256(555))));
+        return VaultRegistry(deploy(creationCode));
     }
 
     function deployCDP(
@@ -85,11 +91,11 @@ contract Deployment is Script {
             vm.getCode("contracts/out/Bot.sol/Bot.json"),
             abi.encode(admin, minter)
         );
-        return Bot(factory.deploy(creationCode, bytes32(uint256(555))));
+        return Bot(deploy(creationCode));
     }
 
     function deployUniV3Amounts() internal returns (UniV3Amounts) {
         bytes memory creationCode = vm.getCode("contracts/out/UniV3Amounts.sol/UniV3Amounts.json");
-        return UniV3Amounts(factory.deploy(creationCode, bytes32(uint256(555))));
+        return UniV3Amounts(deploy(creationCode));
     }
 }

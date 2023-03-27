@@ -5,9 +5,9 @@ import { DENOMINATOR } from "./constants";
 import axios from "axios";
 import url from "url";
 import { Interface } from "ethers/lib/utils";
+import { logger } from "./logger";
 
 export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: ethers.providers.Provider) => {
-    console.log("In liquidation");
     const bot = new ethers.Contract(
         process.env.BOT as string,
         [
@@ -25,7 +25,7 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
     }
     const { liquidationPremiumD } = await cdp.protocolParams();
     const toRepay = overallCollateral.mul(DENOMINATOR.sub(liquidationPremiumD)).div(DENOMINATOR);
-    console.log(
+    logger.info(
         "Trying to liquidate vault %s with repayment %s and debt %s",
         vault.id,
         toRepay.toString(),
@@ -34,20 +34,26 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
     const nfts = await cdp.vaultNftsById(vault.id);
     const { swapAddresses, swapData } = await buildAllSwapData(bot.address, nfts, provider);
     let { maxFeePerGas } = await provider.getFeeData();
-    const expectedGas = await bot.connect(signer).estimateGas.liquidate(
-        process.env.FLASH_MINTER,
-        process.env.TOKEN,
-        {
-            vaultId: vault.id,
-            debt: toRepay,
-            nfts,
-            swapAddresses,
-            swapData,
-            positionManager: process.env.POSITION_MANAGER,
-            cdp: cdp.address,
-        },
-        signer.address
-    );
+    let expectedGas = BigNumber.from(0);
+    try {
+        expectedGas = await bot.connect(signer).estimateGas.liquidate(
+            process.env.FLASH_MINTER,
+            process.env.TOKEN,
+            {
+                vaultId: vault.id,
+                debt: toRepay,
+                nfts,
+                swapAddresses,
+                swapData,
+                positionManager: process.env.POSITION_MANAGER,
+                cdp: cdp.address,
+            },
+            signer.address
+        );
+    } catch (error: any) {
+        logger.error("failed on callStatic with reason: " + error.reason);
+        return;
+    }
     if (maxFeePerGas == null) {
         maxFeePerGas = BigNumber.from(process.env.MAX_FEE_PER_GAS);
     }
@@ -129,8 +135,6 @@ const buildSwapData = async (bot: string, tokenFrom: string, amount: BigNumber, 
     const {
         data: { tx },
     } = await axios.get(`${process.env.BASE_API_URL}/${chainId}/swap?${payload}`);
-    console.log("Data: ", tx.data);
-    console.log("Address: ", tx.to);
     return {
         address: tx.to as string,
         data: tx.data as string,
