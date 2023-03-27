@@ -51,7 +51,7 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
             signer.address
         );
     } catch (error: any) {
-        logger.error("failed on callStatic with reason: " + error.reason);
+        logger.warn("failed on callStatic with reason: " + error.reason);
         return;
     }
     if (maxFeePerGas == null) {
