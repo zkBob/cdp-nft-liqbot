@@ -8,7 +8,13 @@ import {ICDP} from "@cdp/src/interfaces/ICDP.sol";
 import "./interfaces/IWETH.sol";
 
 contract Bot is IERC3156FlashBorrower {
+    /// @notice minter for flashloans of BOB token
+    /// it should implement IERC3156FlashLender interface
+    /// used only for validation of the onFlashLoan call
     address public immutable flashMinter;
+
+    /// @notice admin of the bot
+    /// admin can execute any calls via bot
     address public immutable admin;
 
     /// @notice the structure containing all information needed for flashloan + liquidation
@@ -19,7 +25,6 @@ contract Bot is IERC3156FlashBorrower {
     /// @param swapData the data for external calls (abi.encodeWithSelector(selector, arg))
     /// @param positionManager the address of UniV3 position manager, needed to burn all positions
     /// @param cdp the address of cdp contract
-    /// @param token the bob address
     struct FlashCallbackData {
         uint256 vaultId;
         uint256 debt;
@@ -30,15 +35,18 @@ contract Bot is IERC3156FlashBorrower {
         ICDP cdp;
     }
 
+    /// @param admin_ admin address
+    /// @param flashMinter_ flashMinter address
     constructor(address admin_, address flashMinter_) {
         admin = admin_;
         flashMinter = flashMinter_;
     }
 
     /// @notice liquidating CDP position without frontrun liquidity
-    /// @param lender the address of flashloan minter
-    /// @param flashData the data passed to flashloan callback
-    /// @param recipient the address of beneficiar
+    /// @param lender address of flashloan minter
+    /// @param token address of token for liquidation (in our case it is BOB)
+    /// @param flashData data passed to flashloan callback
+    /// @param recipient address of beneficiar
     /// @return earnings amount of tokens earned via liquidation
     function liquidate(
         IERC3156FlashLender lender,
@@ -87,6 +95,7 @@ contract Bot is IERC3156FlashBorrower {
     }
 
     /// @notice just wraps eth to swap it later, can be called by the bot itself or by the admin
+    /// it can also be called by the flashMinter, but a flashLoan contract don't use this method
     /// @param weth the address of weth contract
     function wrapEth(address weth) public isAuthorized {
         IWETH(weth).deposit{value: address(this).balance}();
@@ -142,6 +151,7 @@ contract Bot is IERC3156FlashBorrower {
         positionManager.burn(nft);
     }
 
+    /// @notice checks that the caller is admin, flashMinter or the contract itself
     modifier isAuthorized() {
         require(msg.sender == address(this) || msg.sender == admin || msg.sender == flashMinter, "not authorized");
         _;

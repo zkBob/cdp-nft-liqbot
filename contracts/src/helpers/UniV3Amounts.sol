@@ -10,6 +10,11 @@ import "@univ3-core/libraries/TickMath.sol";
 import "@cdp/src/libraries/UniswapV3FeesCalculation.sol";
 
 contract UniV3Amounts {
+    /// @notice calculating actual amounts of tokens in the position
+    /// @param nft positon nft
+    /// @param positionLoader address of positionManager
+    /// @return tokens array of tokens in the position
+    /// @return tokenAmounts array of amounts of the corresponding tokens
     function getAmounts(
         uint256 nft,
         INonfungiblePositionLoader positionLoader
