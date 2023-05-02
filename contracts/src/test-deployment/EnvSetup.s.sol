@@ -63,12 +63,12 @@ contract EnvSetup is Deployment {
 
         vm.stopBroadcast();
 
-        require(address(token) == 0x31981cB55231c31e02CA09f163b3449Eaeae8418, "Wrong token address");
-        require(address(flashMinter) == 0x53fA4991ce88a6c98BC28C73f8063969451c6cB7, "Wrong minter address");
-        require(address(registry) == 0x014d013a2515E893E1be713D6C6cf1Fbc8684C64, "Wrong registry address");
-        require(address(cdp) == 0x901EE5CeD8Cb8958342F0C21CC0CFcD0e37adEA5, "Wrong CDP address");
-        require(address(bot) == 0x2eB97CED8A8bd589D2D799d73393a8D25E70484B, "Wrong bot address");
-        require(address(uniV3Amounts) == 0xd5BC70A3e9737CccEfb8cAe924f74Ea06bAAB36F, "Wrong uniV3Amounts address");
+        require(address(token) == 0x8b0D0EEB49838c7ce6904A947A4345ef117Ea12b, "Wrong token address");
+        require(address(flashMinter) == 0x6bba8722c6b7F0a7720b114162640f134ed9aFfa, "Wrong minter address");
+        require(address(registry) == 0x14040Ff5f1579F1D4BbC1356f386091FD6937BFc, "Wrong registry address");
+        require(address(cdp) == 0x1317F83e833D8604c22EB8431476c3A62e3A5f4d, "Wrong CDP address");
+        require(address(bot) == 0xc136917cC604B6B1f5eD25A1024C5f67E7AF50C0, "Wrong bot address");
+        require(address(uniV3Amounts) == 0x3D6f62D61FEE5D99ba1C8fEfeaC318E304CF9247, "Wrong uniV3Amounts address");
 
         console2.log("Token address: ", address(token));
         console2.log("Flash minter: ", address(flashMinter));
@@ -101,7 +101,8 @@ contract EnvSetup is Deployment {
         heartbeats[0] = 1 hours;
         heartbeats[1] = 1 hours;
         ChainlinkOracle originalOracle = new ChainlinkOracle(tokens, oracles, heartbeats, 1 days);
-        MockOracle oracle = new MockOracle();
+        bytes memory creationCode = vm.getCode("contracts/out/MockOracle.sol/MockOracle.json");
+        MockOracle oracle = MockOracle(factory.deploy(creationCode, bytes32(uint256(555))));
         (, uint256 price) = originalOracle.price(wmatic);
         oracle.setPrice(wmatic, price);
         (, price) = originalOracle.price(weth);

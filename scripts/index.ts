@@ -7,6 +7,8 @@ import { getAmountsForLiquidty } from "./liquidity-math";
 import { sqrt } from "./math-utils";
 import { liquidate } from "./bot";
 import { Q96, Q48, DENOMINATOR, DEBT_DENOMINATOR } from "./constants";
+import { logger } from "./logger";
+import * as fs from "fs";
 
 dotenv.config({ path: __dirname + "/.env" });
 
@@ -25,23 +27,31 @@ const main = async () => {
         provider
     );
     const interval = parseInt(process.env.INTERVAL as string);
-    console.log("Before loop");
+    logger.info("STARTED");
     while (true) {
+        const toIgnore = new Set(
+            fs
+                .readFileSync("./scripts/vaults.ignore", "utf-8")
+                .split("\n")
+                .map((x) => x.replace(" ", ""))
+        );
+        console.log(toIgnore);
         const start = performance.now();
         try {
             const vaults: Vault[] = (await execute(VaultsDocument, {})).data.vaults;
             const tokenPricesX96 = await getNeededPricesX96(vaults, provider, cdp);
             const normalizationRate = await cdp.normalizationRate();
-            await getActualAdjustedCapital(cdp, BigNumber.from(1));
             for (let i = 0; i < vaults.length; ++i) {
                 const vault = vaults[i];
+                if (toIgnore.has(vault.id)) {
+                    continue;
+                }
                 if (await liquidationNeeded(vault, tokenPricesX96, normalizationRate)) {
                     await liquidate(vault, cdp, provider);
                 }
             }
         } catch (error) {
-            // TODO: report error
-            console.log("Error: ", error);
+            logger.error("UNKNOWN ERROR: ", error);
         }
         const finish = performance.now();
         let duration = finish - start;
@@ -80,11 +90,9 @@ const getNeededPricesX96 = async (vaults: Vault[], provider: ethers.providers.Pr
             const token1 = position.token1;
             if (!(token0 in tokens)) {
                 tokens[token0] = (await chainlinkOracle.price(token0))[1];
-                console.log("price: ", token0, tokens[token0].toString());
             }
             if (!(token1 in tokens)) {
                 tokens[token1] = (await chainlinkOracle.price(token1))[1];
-                console.log("price: ", token1, tokens[token1].toString());
             }
         }
     }
@@ -94,8 +102,6 @@ const getNeededPricesX96 = async (vaults: Vault[], provider: ethers.providers.Pr
 const liquidationNeeded = async (vault: Vault, tokenPricesX96: any, normalizationRate: BigNumber) => {
     const capital = getAdjustedCapital(vault, tokenPricesX96);
     const debt = getOverallDebt(vault, normalizationRate);
-    console.log("Capital: ", capital.toString());
-    console.log("Debt: ", debt.toString());
     return capital.lt(debt);
 };
 
@@ -116,8 +122,6 @@ const getAdjustedCapital = (vault: Vault, tokenPricesX96: any) => {
         let currentCapital = BigNumber.from(0);
         amount0 = amount0.add(vault.uniV3Positions[i].amount0);
         amount1 = amount1.add(vault.uniV3Positions[i].amount1);
-        console.log("amount0: ", amount0.toString());
-        console.log("amount1: ", amount1.toString());
         currentCapital = currentCapital.add(amount0.mul(price0X96).div(Q96));
         currentCapital = currentCapital.add(amount1.mul(price1X96).div(Q96));
         capital = capital.add(currentCapital.mul(vault.uniV3Positions[i].pool.liquidationThreshold).div(DENOMINATOR));
@@ -127,7 +131,6 @@ const getAdjustedCapital = (vault: Vault, tokenPricesX96: any) => {
 
 const getActualAdjustedCapital = async (cdp: ethers.Contract, vaultId: BigNumber) => {
     const { adjustedCollateral } = await cdp.calculateVaultCollateral(vaultId);
-    console.log("Actual capital: ", adjustedCollateral.toString());
 };
 
 const getAmounts = (
