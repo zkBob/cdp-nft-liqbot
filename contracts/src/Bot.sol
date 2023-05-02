@@ -76,6 +76,7 @@ contract Bot is IERC3156FlashBorrower {
         bytes calldata data
     ) external isAuthorized returns (bytes32) {
         FlashCallbackData memory decoded = abi.decode(data, (FlashCallbackData));
+        require(initiator == address(this), "not authorized");
 
         // liquidate
         ICDP cdp = decoded.cdp;
