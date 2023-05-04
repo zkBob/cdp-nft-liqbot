@@ -32,8 +32,8 @@ contract EnvSetup is Deployment {
         cdp.changeMaxDebtPerVault(type(uint256).max);
         cdp.changeMaxNftsPerVault(uint8(5));
         ICDP.PoolParams memory params = ICDP.PoolParams({
-            liquidationThreshold: (DENOMINATOR / 10) * 6,
-            borrowThreshold: (DENOMINATOR / 10) * 6,
+            liquidationThresholdD: (DENOMINATOR / 10) * 6,
+            borrowThresholdD: (DENOMINATOR / 10) * 6,
             minWidth: 0
         });
         cdp.setPoolParams(address(pool), params);
