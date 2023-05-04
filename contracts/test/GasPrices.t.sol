@@ -190,7 +190,7 @@ contract GasEstimationTest is Test, Deployment {
         }
         cdp.makeLiquidationsPublic();
         bot = deployBot(address(this), flashMinter);
-        require(address(bot) == 0x8087e84897F26aF7227B14C33138AeE222e68d2f, "Bot has wrong address");
+        require(address(bot) == 0x5A49f94cd76e62D9093AB35fddEFb412d8Cc3F76, "Bot has wrong address");
     }
 
     function setSwaps() internal {
