@@ -181,8 +181,8 @@ contract GasEstimationTest is Test, Deployment {
         cdp.changeMaxDebtPerVault(type(uint256).max);
         cdp.changeMaxNftsPerVault(uint8(5));
         ICDP.PoolParams memory params = ICDP.PoolParams({
-            liquidationThreshold: (DENOMINATOR / 10) * 6,
-            borrowThreshold: (DENOMINATOR / 10) * 6,
+            liquidationThresholdD: (DENOMINATOR / 10) * 6,
+            borrowThresholdD: (DENOMINATOR / 10) * 6,
             minWidth: 0
         });
         for (uint256 i = 0; i < pools.length; ++i) {
@@ -190,7 +190,7 @@ contract GasEstimationTest is Test, Deployment {
         }
         cdp.makeLiquidationsPublic();
         bot = deployBot(address(this), flashMinter);
-        require(address(bot) == 0x5A49f94cd76e62D9093AB35fddEFb412d8Cc3F76, "Bot has wrong address");
+        require(address(bot) == 0x6A7FCB873Bd9c409a8Ee6fc40302780C76c9fFea, "Bot has wrong address");
     }
 
     function setSwaps() internal {
