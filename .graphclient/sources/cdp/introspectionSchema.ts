@@ -3100,6 +3100,19 @@ const schemaAST = {
       "directives": []
     },
     {
+      "kind": "ScalarTypeDefinition",
+      "description": {
+        "kind": "StringValue",
+        "value": "8 bytes signed integer\n",
+        "block": true
+      },
+      "name": {
+        "kind": "Name",
+        "value": "Int8"
+      },
+      "directives": []
+    },
+    {
       "kind": "EnumTypeDefinition",
       "description": {
         "kind": "StringValue",
@@ -7510,25 +7523,6 @@ const schemaAST = {
           "kind": "FieldDefinition",
           "name": {
             "kind": "Name",
-            "value": "vault"
-          },
-          "arguments": [],
-          "type": {
-            "kind": "NonNullType",
-            "type": {
-              "kind": "NamedType",
-              "name": {
-                "kind": "Name",
-                "value": "Vault"
-              }
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "FieldDefinition",
-          "name": {
-            "kind": "Name",
             "value": "liquidity"
           },
           "arguments": [],
@@ -8304,333 +8298,6 @@ const schemaAST = {
             "name": {
               "kind": "Name",
               "value": "PoolInfo_filter"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_not"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_gt"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_lt"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_gte"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_lte"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_in"
-          },
-          "type": {
-            "kind": "ListType",
-            "type": {
-              "kind": "NonNullType",
-              "type": {
-                "kind": "NamedType",
-                "name": {
-                  "kind": "Name",
-                  "value": "String"
-                }
-              }
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_not_in"
-          },
-          "type": {
-            "kind": "ListType",
-            "type": {
-              "kind": "NonNullType",
-              "type": {
-                "kind": "NamedType",
-                "name": {
-                  "kind": "Name",
-                  "value": "String"
-                }
-              }
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_contains"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_contains_nocase"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_not_contains"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_not_contains_nocase"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_starts_with"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_starts_with_nocase"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_not_starts_with"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_not_starts_with_nocase"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_ends_with"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_ends_with_nocase"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_not_ends_with"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_not_ends_with_nocase"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "String"
-            }
-          },
-          "directives": []
-        },
-        {
-          "kind": "InputValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault_"
-          },
-          "type": {
-            "kind": "NamedType",
-            "name": {
-              "kind": "Name",
-              "value": "Vault_filter"
             }
           },
           "directives": []
@@ -9737,30 +9404,6 @@ const schemaAST = {
           "kind": "EnumValueDefinition",
           "name": {
             "kind": "Name",
-            "value": "vault"
-          },
-          "directives": []
-        },
-        {
-          "kind": "EnumValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault__id"
-          },
-          "directives": []
-        },
-        {
-          "kind": "EnumValueDefinition",
-          "name": {
-            "kind": "Name",
-            "value": "vault__vaultNormalizedDebt"
-          },
-          "directives": []
-        },
-        {
-          "kind": "EnumValueDefinition",
-          "name": {
-            "kind": "Name",
             "value": "liquidity"
           },
           "directives": []
@@ -10419,6 +10062,132 @@ const schemaAST = {
                 "name": {
                   "kind": "Name",
                   "value": "BigInt"
+                }
+              }
+            }
+          },
+          "directives": []
+        },
+        {
+          "kind": "InputValueDefinition",
+          "name": {
+            "kind": "Name",
+            "value": "uniV3Positions"
+          },
+          "type": {
+            "kind": "ListType",
+            "type": {
+              "kind": "NonNullType",
+              "type": {
+                "kind": "NamedType",
+                "name": {
+                  "kind": "Name",
+                  "value": "String"
+                }
+              }
+            }
+          },
+          "directives": []
+        },
+        {
+          "kind": "InputValueDefinition",
+          "name": {
+            "kind": "Name",
+            "value": "uniV3Positions_not"
+          },
+          "type": {
+            "kind": "ListType",
+            "type": {
+              "kind": "NonNullType",
+              "type": {
+                "kind": "NamedType",
+                "name": {
+                  "kind": "Name",
+                  "value": "String"
+                }
+              }
+            }
+          },
+          "directives": []
+        },
+        {
+          "kind": "InputValueDefinition",
+          "name": {
+            "kind": "Name",
+            "value": "uniV3Positions_contains"
+          },
+          "type": {
+            "kind": "ListType",
+            "type": {
+              "kind": "NonNullType",
+              "type": {
+                "kind": "NamedType",
+                "name": {
+                  "kind": "Name",
+                  "value": "String"
+                }
+              }
+            }
+          },
+          "directives": []
+        },
+        {
+          "kind": "InputValueDefinition",
+          "name": {
+            "kind": "Name",
+            "value": "uniV3Positions_contains_nocase"
+          },
+          "type": {
+            "kind": "ListType",
+            "type": {
+              "kind": "NonNullType",
+              "type": {
+                "kind": "NamedType",
+                "name": {
+                  "kind": "Name",
+                  "value": "String"
+                }
+              }
+            }
+          },
+          "directives": []
+        },
+        {
+          "kind": "InputValueDefinition",
+          "name": {
+            "kind": "Name",
+            "value": "uniV3Positions_not_contains"
+          },
+          "type": {
+            "kind": "ListType",
+            "type": {
+              "kind": "NonNullType",
+              "type": {
+                "kind": "NamedType",
+                "name": {
+                  "kind": "Name",
+                  "value": "String"
+                }
+              }
+            }
+          },
+          "directives": []
+        },
+        {
+          "kind": "InputValueDefinition",
+          "name": {
+            "kind": "Name",
+            "value": "uniV3Positions_not_contains_nocase"
+          },
+          "type": {
+            "kind": "ListType",
+            "type": {
+              "kind": "NonNullType",
+              "type": {
+                "kind": "NamedType",
+                "name": {
+                  "kind": "Name",
+                  "value": "String"
                 }
               }
             }

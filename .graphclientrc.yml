@@ -3,7 +3,7 @@ sources:
   - name: cdp
     handler:
       graphql:
-        endpoint: http://localhost:8765/subgraphs/name/yusupovai/cdp
+        endpoint: https://api.thegraph.com/subgraphs/name/zkbob/cdp-nft-polygon
     transforms:
       - autoPagination:
           validateSchema: true

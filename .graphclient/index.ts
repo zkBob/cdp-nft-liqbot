@@ -41,6 +41,7 @@ export type Scalars = {
   BigDecimal: any;
   BigInt: any;
   Bytes: any;
+  Int8: any;
 };
 
 export type BlockChangedFilter = {
@@ -632,7 +633,6 @@ export type Subscription_metaArgs = {
 export type UniV3Position = {
   id: Scalars['String'];
   pool: PoolInfo;
-  vault: Vault;
   liquidity: Scalars['BigInt'];
   token0: Scalars['Bytes'];
   token1: Scalars['Bytes'];
@@ -684,27 +684,6 @@ export type UniV3Position_filter = {
   pool_not_ends_with?: InputMaybe<Scalars['String']>;
   pool_not_ends_with_nocase?: InputMaybe<Scalars['String']>;
   pool_?: InputMaybe<PoolInfo_filter>;
-  vault?: InputMaybe<Scalars['String']>;
-  vault_not?: InputMaybe<Scalars['String']>;
-  vault_gt?: InputMaybe<Scalars['String']>;
-  vault_lt?: InputMaybe<Scalars['String']>;
-  vault_gte?: InputMaybe<Scalars['String']>;
-  vault_lte?: InputMaybe<Scalars['String']>;
-  vault_in?: InputMaybe<Array<Scalars['String']>>;
-  vault_not_in?: InputMaybe<Array<Scalars['String']>>;
-  vault_contains?: InputMaybe<Scalars['String']>;
-  vault_contains_nocase?: InputMaybe<Scalars['String']>;
-  vault_not_contains?: InputMaybe<Scalars['String']>;
-  vault_not_contains_nocase?: InputMaybe<Scalars['String']>;
-  vault_starts_with?: InputMaybe<Scalars['String']>;
-  vault_starts_with_nocase?: InputMaybe<Scalars['String']>;
-  vault_not_starts_with?: InputMaybe<Scalars['String']>;
-  vault_not_starts_with_nocase?: InputMaybe<Scalars['String']>;
-  vault_ends_with?: InputMaybe<Scalars['String']>;
-  vault_ends_with_nocase?: InputMaybe<Scalars['String']>;
-  vault_not_ends_with?: InputMaybe<Scalars['String']>;
-  vault_not_ends_with_nocase?: InputMaybe<Scalars['String']>;
-  vault_?: InputMaybe<Vault_filter>;
   liquidity?: InputMaybe<Scalars['BigInt']>;
   liquidity_not?: InputMaybe<Scalars['BigInt']>;
   liquidity_gt?: InputMaybe<Scalars['BigInt']>;
@@ -778,9 +757,6 @@ export type UniV3Position_orderBy =
   | 'pool__liquidationThreshold'
   | 'pool__borrowThreshold'
   | 'pool__minWidth'
-  | 'vault'
-  | 'vault__id'
-  | 'vault__vaultNormalizedDebt'
   | 'liquidity'
   | 'token0'
   | 'token1'
@@ -833,6 +809,12 @@ export type Vault_filter = {
   vaultNormalizedDebt_lte?: InputMaybe<Scalars['BigInt']>;
   vaultNormalizedDebt_in?: InputMaybe<Array<Scalars['BigInt']>>;
   vaultNormalizedDebt_not_in?: InputMaybe<Array<Scalars['BigInt']>>;
+  uniV3Positions?: InputMaybe<Array<Scalars['String']>>;
+  uniV3Positions_not?: InputMaybe<Array<Scalars['String']>>;
+  uniV3Positions_contains?: InputMaybe<Array<Scalars['String']>>;
+  uniV3Positions_contains_nocase?: InputMaybe<Array<Scalars['String']>>;
+  uniV3Positions_not_contains?: InputMaybe<Array<Scalars['String']>>;
+  uniV3Positions_not_contains_nocase?: InputMaybe<Array<Scalars['String']>>;
   uniV3Positions_?: InputMaybe<UniV3Position_filter>;
   /** Filter for the block changed event. */
   _change_block?: InputMaybe<BlockChangedFilter>;
@@ -1047,6 +1029,7 @@ export type ResolversTypes = ResolversObject<{
   Float: ResolverTypeWrapper<Scalars['Float']>;
   ID: ResolverTypeWrapper<Scalars['ID']>;
   Int: ResolverTypeWrapper<Scalars['Int']>;
+  Int8: ResolverTypeWrapper<Scalars['Int8']>;
   OrderDirection: OrderDirection;
   PoolInfo: ResolverTypeWrapper<PoolInfo>;
   PoolInfo_filter: PoolInfo_filter;
@@ -1085,6 +1068,7 @@ export type ResolversParentTypes = ResolversObject<{
   Float: Scalars['Float'];
   ID: Scalars['ID'];
   Int: Scalars['Int'];
+  Int8: Scalars['Int8'];
   PoolInfo: PoolInfo;
   PoolInfo_filter: PoolInfo_filter;
   Query: {};
@@ -1149,6 +1133,10 @@ export type DepositResolvers<ContextType = MeshContext, ParentType extends Resol
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 }>;
 
+export interface Int8ScalarConfig extends GraphQLScalarTypeConfig<ResolversTypes['Int8'], any> {
+  name: 'Int8';
+}
+
 export type PoolInfoResolvers<ContextType = MeshContext, ParentType extends ResolversParentTypes['PoolInfo'] = ResolversParentTypes['PoolInfo']> = ResolversObject<{
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   liquidationThreshold?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
@@ -1196,7 +1184,6 @@ export type SubscriptionResolvers<ContextType = MeshContext, ParentType extends 
 export type UniV3PositionResolvers<ContextType = MeshContext, ParentType extends ResolversParentTypes['UniV3Position'] = ResolversParentTypes['UniV3Position']> = ResolversObject<{
   id?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   pool?: Resolver<ResolversTypes['PoolInfo'], ParentType, ContextType>;
-  vault?: Resolver<ResolversTypes['Vault'], ParentType, ContextType>;
   liquidity?: Resolver<ResolversTypes['BigInt'], ParentType, ContextType>;
   token0?: Resolver<ResolversTypes['Bytes'], ParentType, ContextType>;
   token1?: Resolver<ResolversTypes['Bytes'], ParentType, ContextType>;
@@ -1242,6 +1229,7 @@ export type Resolvers<ContextType = MeshContext> = ResolversObject<{
   DebtBurnedEntity?: DebtBurnedEntityResolvers<ContextType>;
   DebtMintedEntity?: DebtMintedEntityResolvers<ContextType>;
   Deposit?: DepositResolvers<ContextType>;
+  Int8?: GraphQLScalarType;
   PoolInfo?: PoolInfoResolvers<ContextType>;
   Query?: QueryResolvers<ContextType>;
   Subscription?: SubscriptionResolvers<ContextType>;
@@ -1303,7 +1291,7 @@ const cdpTransforms = [];
 const additionalTypeDefs = [] as any[];
 const cdpHandler = new GraphqlHandler({
               name: "cdp",
-              config: {"endpoint":"http://localhost:8765/subgraphs/name/yusupovai/cdp"},
+              config: {"endpoint":"https://api.thegraph.com/subgraphs/name/zkbob/cdp-nft-polygon"},
               baseDir,
               cache,
               pubsub,
