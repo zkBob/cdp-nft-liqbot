@@ -1,42 +1,53 @@
 import { BigNumber, ethers } from "ethers";
-import { NonceManager } from "@ethersproject/experimental";
 import { Vault } from "../.graphclient";
-import { DENOMINATOR } from "./constants";
+import { DEBT_DENOMINATOR, DENOMINATOR } from "./constants";
 import axios from "axios";
 import url from "url";
-import { Interface } from "ethers/lib/utils";
+import { formatUnits, Interface } from "ethers/lib/utils";
 import { logger } from "./logger";
 
-export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: ethers.providers.Provider) => {
-    const bot = new ethers.Contract(
-        process.env.BOT as string,
-        [
-            "function liquidate(address flashMinter, address token, tuple(uint256 vaultId, uint256 debt, uint256[] nfts, address[] swapAddresses, bytes[] swapData, address positionManager, address cdp), address recipient)",
-        ],
-        provider
-    );
-    const signer = new ethers.Wallet(process.env.PRIVATE_KEY as string, provider);
-    const nonceManager = new NonceManager(signer);
-
-    const { overallCollateral, adjustedCollateral } = await cdp.calculateVaultCollateral(vault.id);
+export const liquidate = async (vault: Vault, cdp: ethers.Contract, bot: ethers.Contract, address: string) => {
+    const { overallCollateral, adjustedCollateral: borrowLimit } = await cdp.calculateVaultCollateral(vault.id);
     const actualDebt = await cdp.getOverallDebt(vault.id);
-    if (adjustedCollateral.gte(actualDebt)) {
+    if (actualDebt.lte(borrowLimit)) {
+        const health = BigNumber.from(100).mul(borrowLimit).div(actualDebt).toNumber() / 100;
+        logger.warn(
+            {
+                id: vault.id,
+                borrowLimit: borrowLimit.div(DEBT_DENOMINATOR).toString(),
+                debt: actualDebt.div(DEBT_DENOMINATOR).toString(),
+                health,
+            },
+            "Vault appeared to be ineligible for liquidation, skipping"
+        );
         return;
     }
     const { liquidationPremiumD } = await cdp.protocolParams();
+    logger.debug({ premium: liquidationPremiumD / DENOMINATOR.toNumber() }, "Fetched liquidation premium");
+
+    logger.debug({ id: vault.id }, "Fetching collateral list");
+    const nfts = await cdp.vaultNftsById(vault.id);
+    logger.info({ id: vault.id, count: nfts.length, nfts }, "Fetched collateral list");
+
     const toRepay = overallCollateral.mul(DENOMINATOR.sub(liquidationPremiumD)).div(DENOMINATOR);
     logger.info(
-        "Trying to liquidate vault %s with repayment %s and debt %s",
-        vault.id,
-        toRepay.toString(),
-        actualDebt.toString()
+        {
+            id: vault.id,
+            borrowLimit: borrowLimit.div(DEBT_DENOMINATOR).toString(),
+            repayment: toRepay.div(DEBT_DENOMINATOR).toString(),
+            debt: actualDebt.div(DEBT_DENOMINATOR).toString(),
+        },
+        "Building liquidation calldata"
     );
-    const nfts = await cdp.vaultNftsById(vault.id);
-    const { swapAddresses, swapData } = await buildAllSwapData(bot.address, nfts, provider);
-    let { maxFeePerGas } = await provider.getFeeData();
+    const { swapAddresses, swapData } = await buildAllSwapData(bot.address, nfts, bot.provider);
+
+    const feeData = await bot.provider.getFeeData();
+    const maxFeePerGas = feeData.maxFeePerGas || BigNumber.from(process.env.MAX_FEE_PER_GAS);
+    logger.info({ maxFeePerGas: formatUnits(maxFeePerGas, "gwei") + "gwei" }, "Fetched gas price");
+
     let expectedGas = BigNumber.from(0);
     try {
-        expectedGas = await bot.connect(signer).estimateGas.liquidate(
+        expectedGas = await bot.estimateGas.liquidate(
             process.env.FLASH_MINTER,
             process.env.TOKEN,
             {
@@ -48,16 +59,14 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
                 positionManager: process.env.POSITION_MANAGER,
                 cdp: cdp.address,
             },
-            signer.address
+            address
         );
+        logger.info({ estimate: expectedGas }, "Estimated transaction gas");
     } catch (error: any) {
         logger.warn("failed on callStatic with reason: " + error.reason);
         return;
     }
-    if (maxFeePerGas == null) {
-        maxFeePerGas = BigNumber.from(process.env.MAX_FEE_PER_GAS);
-    }
-    await bot.connect(nonceManager).liquidate(
+    await bot.liquidate(
         process.env.FLASH_MINTER,
         process.env.TOKEN,
         {
@@ -69,10 +78,10 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, provider: et
             positionManager: process.env.POSITION_MANAGER,
             cdp: cdp.address,
         },
-        signer.address,
+        address,
         {
-            gasLimit: expectedGas.mul(101).div(100),
-            maxFeePerGas: maxFeePerGas.mul(101).div(100),
+            gasLimit: expectedGas.mul(110).div(100),
+            maxFeePerGas: maxFeePerGas.mul(110).div(100),
         }
     );
 };
@@ -124,14 +133,17 @@ const getActualTokenAmounts = async (nfts: BigNumber[], provider: ethers.provide
 };
 
 const buildSwapData = async (bot: string, tokenFrom: string, amount: BigNumber, chainId: number) => {
+    const outToken = process.env.TRUE_TOKEN ? (process.env.TRUE_TOKEN as string) : (process.env.TOKEN as string);
+    const amountNorm = amount.mul(99).div(100).toString();
     const payload = new url.URLSearchParams({
         fromTokenAddress: tokenFrom,
-        toTokenAddress: process.env.TRUE_TOKEN ? (process.env.TRUE_TOKEN as string) : (process.env.TOKEN as string),
-        amount: amount.mul(99).div(100).toString(),
+        toTokenAddress: outToken,
+        amount: amountNorm,
         fromAddress: bot,
         disableEstimate: "true",
         slippage: "10",
     });
+    logger.info({ inToken: tokenFrom, outToken, amount: amountNorm }, "Fetching swap data");
     const {
         data: { tx },
     } = await axios.get(`${process.env.BASE_API_URL}/${chainId}/swap?${payload}`);

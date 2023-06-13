@@ -1,7 +1,11 @@
 import * as dotenv from "dotenv";
+
+dotenv.config({ path: __dirname + "/.env" });
+
 import { VaultsDocument, execute, Vault } from "../.graphclient";
 import { ethers, providers, BigNumber } from "ethers";
 import { TickMath } from "@uniswap/v3-sdk";
+
 const { JsonRpcProvider } = providers;
 import { getAmountsForLiquidty } from "./liquidity-math";
 import { sqrt } from "./math-utils";
@@ -9,15 +13,15 @@ import { liquidate } from "./bot";
 import { Q96, Q48, DENOMINATOR, DEBT_DENOMINATOR } from "./constants";
 import { logger } from "./logger";
 import * as fs from "fs";
-
-dotenv.config({ path: __dirname + "/.env" });
+import { NonceManager } from "@ethersproject/experimental";
 
 const main = async () => {
     const provider = new JsonRpcProvider(process.env.RPC);
-    let cdp = new ethers.Contract(
+    const cdp = new ethers.Contract(
         process.env.CDP as string,
         [
             "function normalizationRate() view returns (uint256)",
+            "function updateNormalizationRate() view returns (uint256)",
             "function oracle() view returns (address)",
             "function calculateVaultCollateral(uint256 vaultId) view returns (tuple(uint256 overallCollateral, uint256 adjustedCollateral))",
             "function getOverallDebt(uint256 vaultId) view returns (uint256)",
@@ -26,39 +30,70 @@ const main = async () => {
         ],
         provider
     );
+    const signer = new ethers.Wallet(process.env.PRIVATE_KEY as string, provider);
+    const nonceManager = new NonceManager(signer);
+    const bot = new ethers.Contract(
+        process.env.BOT as string,
+        [
+            "function liquidate(address flashMinter, address token, tuple(uint256 vaultId, uint256 debt, uint256[] nfts, address[] swapAddresses, bytes[] swapData, address positionManager, address cdp), address recipient)",
+        ],
+        nonceManager
+    );
+
+    const balance = await provider.getBalance(signer.address);
+
     const interval = parseInt(process.env.INTERVAL as string);
-    logger.info("STARTED");
+    logger.info(
+        {
+            address: signer.address,
+            interval: interval / 1000 + "s",
+            balance: ethers.utils.formatEther(balance),
+        },
+        "Starting liquidator bot"
+    );
+
+    const chainlinkOracle = await getChainlinkOracle(provider, cdp);
+    logger.info({ address: chainlinkOracle.address }, "Chainlink price oracle");
+
     while (true) {
         const toIgnore = new Set(
             fs
                 .readFileSync("./scripts/vaults.ignore", "utf-8")
                 .split("\n")
                 .map((x) => x.replace(" ", ""))
+                .filter((x) => x.length > 0)
         );
-        console.log(toIgnore);
+        if (toIgnore.size > 0) {
+            logger.debug("Skipping health check on some vaults", { count: toIgnore.size, ids: toIgnore.values() });
+        }
         const start = performance.now();
         try {
+            logger.debug("Fetching active vaults");
             const vaults: Vault[] = (await execute(VaultsDocument, {})).data.vaults;
-            const tokenPricesX96 = await getNeededPricesX96(vaults, provider, cdp);
-            const normalizationRate = await cdp.normalizationRate();
-            for (let i = 0; i < vaults.length; ++i) {
-                const vault = vaults[i];
+            logger.info({ count: vaults.length }, "Fetched active vaults");
+
+            logger.debug("Fetching token prices");
+            const tokenPricesX96 = await getNeededPricesX96(vaults, chainlinkOracle);
+
+            logger.debug("Fetching normalization rate");
+            const normalizationRate = await cdp.updateNormalizationRate();
+            logger.info({ rate: normalizationRate.toString() }, "Fetched normalization rate");
+
+            for (const vault of vaults) {
                 if (toIgnore.has(vault.id)) {
-                    continue;
-                }
-                if (await liquidationNeeded(vault, tokenPricesX96, normalizationRate)) {
-                    await liquidate(vault, cdp, provider);
+                    logger.debug({ id: vault.id }, "Skipping active vault due to ignore settings");
+                } else if (await liquidationNeeded(vault, tokenPricesX96, normalizationRate)) {
+                    logger.warn({ id: vault.id }, "Attempting vault liquidation");
+                    await liquidate(vault, cdp, bot, signer.address);
                 }
             }
-        } catch (error) {
-            logger.error("UNKNOWN ERROR: ", error);
+        } catch (error: any) {
+            logger.error({ error: error.message }, "UNKNOWN ERROR");
         }
         const finish = performance.now();
-        let duration = finish - start;
-        if (duration > interval) {
-            duration = interval;
+        if (finish - start < interval) {
+            await sleep(interval - (finish - start));
         }
-        await sleep(interval - duration);
     }
 };
 
@@ -79,9 +114,8 @@ const getChainlinkOracle = async (provider: ethers.providers.Provider, cdp: ethe
     );
 };
 
-const getNeededPricesX96 = async (vaults: Vault[], provider: ethers.providers.Provider, cdp: ethers.Contract) => {
+const getNeededPricesX96 = async (vaults: Vault[], chainlinkOracle: ethers.Contract) => {
     let tokens: { [key: string]: BigNumber } = {};
-    const chainlinkOracle = await getChainlinkOracle(provider, cdp);
     for (let i = 0; i < vaults.length; ++i) {
         const vault = vaults[i];
         for (let j = 0; j < vault.uniV3Positions.length; ++j) {
@@ -90,9 +124,11 @@ const getNeededPricesX96 = async (vaults: Vault[], provider: ethers.providers.Pr
             const token1 = position.token1;
             if (!(token0 in tokens)) {
                 tokens[token0] = (await chainlinkOracle.price(token0))[1];
+                logger.debug({ token: token0, priceX96: tokens[token0].toString() }, "Fetched token price");
             }
             if (!(token1 in tokens)) {
                 tokens[token1] = (await chainlinkOracle.price(token1))[1];
+                logger.debug({ token: token1, priceX96: tokens[token1].toString() }, "Fetched token price");
             }
         }
     }
@@ -100,9 +136,20 @@ const getNeededPricesX96 = async (vaults: Vault[], provider: ethers.providers.Pr
 };
 
 const liquidationNeeded = async (vault: Vault, tokenPricesX96: any, normalizationRate: BigNumber) => {
-    const capital = getAdjustedCapital(vault, tokenPricesX96);
+    const borrowLimit = getAdjustedCapital(vault, tokenPricesX96);
     const debt = getOverallDebt(vault, normalizationRate);
-    return capital.lt(debt);
+    const health = BigNumber.from(100).mul(borrowLimit).div(debt).toNumber() / 100;
+    const level = health > 1.5 ? "debug" : health > 1.15 ? "info" : health > 1 ? "warn" : "error";
+    logger[level](
+        {
+            id: vault.id,
+            borrowLimit: borrowLimit.div(DEBT_DENOMINATOR).toString(),
+            debt: debt.div(DEBT_DENOMINATOR).toString(),
+            health,
+        },
+        "Calculated vault status"
+    );
+    return debt.gt(borrowLimit);
 };
 
 const getAdjustedCapital = (vault: Vault, tokenPricesX96: any) => {
