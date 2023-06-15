@@ -5,6 +5,7 @@ import axios from "axios";
 import url from "url";
 import { formatUnits, Interface } from "ethers/lib/utils";
 import { logger } from "./logger";
+import { TransactionResponse } from "@ethersproject/abstract-provider";
 
 export const liquidate = async (vault: Vault, cdp: ethers.Contract, bot: ethers.Contract, address: string) => {
     const { overallCollateral, adjustedCollateral: borrowLimit } = await cdp.calculateVaultCollateral(vault.id);
@@ -27,9 +28,15 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, bot: ethers.
 
     logger.debug({ id: vault.id }, "Fetching collateral list");
     const nfts = await cdp.vaultNftsById(vault.id);
-    logger.info({ id: vault.id, count: nfts.length, nfts }, "Fetched collateral list");
+    logger.info(
+        { id: vault.id, count: nfts.length, nfts: nfts.map((x: BigNumber) => x.toString()) },
+        "Fetched collateral list"
+    );
 
-    const toRepay = overallCollateral.mul(DENOMINATOR.sub(liquidationPremiumD)).div(DENOMINATOR);
+    let toRepay = overallCollateral.mul(DENOMINATOR.sub(liquidationPremiumD)).div(DENOMINATOR);
+    if (actualDebt.gt(toRepay)) {
+        toRepay = actualDebt;
+    }
     logger.info(
         {
             id: vault.id,
@@ -41,9 +48,17 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, bot: ethers.
     );
     const { swapAddresses, swapData } = await buildAllSwapData(bot.address, nfts, bot.provider);
 
+    // TODO use better lib for gas estimation
     const feeData = await bot.provider.getFeeData();
     const maxFeePerGas = feeData.maxFeePerGas || BigNumber.from(process.env.MAX_FEE_PER_GAS);
-    logger.info({ maxFeePerGas: formatUnits(maxFeePerGas, "gwei") + "gwei" }, "Fetched gas price");
+    const maxPriorityFeePerGas = feeData.maxPriorityFeePerGas || BigNumber.from(process.env.MAX_FEE_PER_GAS);
+    logger.info(
+        {
+            maxFeePerGas: formatUnits(maxFeePerGas, "gwei") + "gwei",
+            maxPriorityFeePerGas: formatUnits(maxPriorityFeePerGas, "gwei") + "gwei",
+        },
+        "Fetched gas price"
+    );
 
     let expectedGas = BigNumber.from(0);
     try {
@@ -52,7 +67,7 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, bot: ethers.
             process.env.TOKEN,
             {
                 vaultId: vault.id,
-                debt: toRepay,
+                debt: toRepay.mul(105).div(100),
                 nfts,
                 swapAddresses,
                 swapData,
@@ -61,12 +76,15 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, bot: ethers.
             },
             address
         );
-        logger.info({ estimate: expectedGas }, "Estimated transaction gas");
+        logger.info({ estimate: expectedGas.toString() }, "Estimated transaction gas");
     } catch (error: any) {
-        logger.warn("failed on callStatic with reason: " + error.reason);
+        logger.warn(
+            { reason: error?.reason, errorData: error?.error?.error?.data, txData: error?.transaction },
+            "Failed on estimateGas with reason"
+        );
         return;
     }
-    await bot.liquidate(
+    const tx: TransactionResponse = await bot.liquidate(
         process.env.FLASH_MINTER,
         process.env.TOKEN,
         {
@@ -82,7 +100,12 @@ export const liquidate = async (vault: Vault, cdp: ethers.Contract, bot: ethers.
         {
             gasLimit: expectedGas.mul(110).div(100),
             maxFeePerGas: maxFeePerGas.mul(110).div(100),
+            maxPriorityFeePerGas: maxPriorityFeePerGas.mul(110).div(100),
         }
+    );
+    logger.info(
+        { id: vault.id, txHash: tx.hash, nonce: tx.nonce, from: tx.from, to: tx.to, data: tx.data },
+        "Sent liquidation tx"
     );
 };
 
